@@ -17,10 +17,40 @@ const CheckCircle = () => (
   </svg>
 );
 
-const RevisionItem = ({ problem, onSolve, onLocalRemove }) => {
+const FiUndo = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+  </svg>
+);
+
+// --- Sub-components ---
+const SolveTracker = ({ count }) => (
+  <div className="flex items-center gap-1">
+    <span className="text-xs text-slate-500 mr-1">Progress:</span>
+    {[...Array(4)].map((_, i) => (
+      <div
+        key={i}
+        className={`h-2 w-2 rounded-full transition-all duration-300 ${
+          i < (count || 0) 
+            ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm' 
+            : 'bg-slate-600'
+        }`}
+      />
+    ))}
+    <span className="text-xs text-slate-500 ml-1">{count || 0}/4</span>
+  </div>
+);
+
+const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
   const [isSolving, setIsSolving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [justSolved, setJustSolved] = useState(false);
   const isLink = problem.problem.startsWith('http');
+  const isRevision = problem.isRevision || problem.originalProblemId;
+  
+  // Check if this revision can be undone (within 5 minutes)
+  const canUndo = isRevision && problem.createdAt && 
+    ((new Date() - problem.createdAt.toDate()) / 1000 / 60) <= 5;
 
   const handleSolve = async () => {
     setIsSolving(true);
@@ -30,80 +60,176 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove }) => {
     
     // Small delay for visual feedback
     setTimeout(async () => {
-      await onSolve(problem.id, problem.solveCount);
-      // Remove from local revision view
-      onLocalRemove(problem.id);
-      setIsSolving(false);
+      try {
+        await onSolve(problem.id, problem.solveCount, true); // Create revision
+        setJustSolved(true);
+        
+        // Remove from local revision view after a short delay
+        setTimeout(() => {
+          onLocalRemove(problem.id);
+        }, 800);
+      } catch (error) {
+        console.error('Error solving problem:', error);
+        setShowSuccess(false);
+      } finally {
+        setIsSolving(false);
+      }
     }, 600);
+  };
+
+  const handleUndo = async () => {
+    try {
+      await onUndoRevision(problem.id);
+    } catch (error) {
+      console.error('Error undoing revision:', error);
+    }
+  };
+
+  const getDifficultyColor = (difficulty) => {
+    switch(difficulty?.toLowerCase()) {
+      case 'easy': return 'text-green-400 bg-green-400/10 border border-green-400/30';
+      case 'medium': return 'text-yellow-400 bg-yellow-400/10 border border-yellow-400/30';
+      case 'hard': return 'text-red-400 bg-red-400/10 border border-red-400/30';
+      default: return 'text-slate-400 bg-slate-400/10 border border-slate-400/30';
+    }
   };
 
   return (
     <motion.li
       layout
+      layoutId={problem.id}
       initial={{ opacity: 0, y: 10 }}
       animate={{ 
-        opacity: showSuccess ? 0.7 : 1, 
+        opacity: showSuccess ? 0.8 : 1, 
         y: 0,
-        scale: showSuccess ? 0.95 : 1
+        scale: showSuccess ? 0.98 : 1
       }}
       exit={{ 
         opacity: 0, 
         x: 100, 
-        scale: 0.8,
-        transition: { duration: 0.3, ease: "easeInOut" } 
+        scale: 0.9,
+        transition: { duration: 0.4, ease: "easeOut" } 
       }}
-      className={`flex items-center justify-between rounded-lg p-3 text-sm transition-all duration-300 relative ${
+      className={`group relative rounded-xl p-4 transition-all duration-300 ${
         showSuccess 
-          ? 'bg-emerald-500/20 border border-emerald-400/30' 
-          : 'bg-slate-800/50'
+          ? 'bg-emerald-500/20 border border-emerald-400/40 shadow-lg shadow-emerald-500/10' 
+          : 'bg-slate-800/60 border border-slate-700/50 hover:bg-slate-800/80 hover:border-slate-600/50'
       }`}
     >
-      <span className="text-slate-300 flex-1 pr-4">
-        {isLink ? (
-          <a 
-            href={problem.problem} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="hover:text-cyan-400 hover:underline break-all"
-          >
-            {problem.problem}
-          </a>
-        ) : (
-          <span className="break-words">{problem.problem}</span>
+      {/* Content */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            {/* Tags and Badges */}
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              {isRevision && (
+                <span className="px-2 py-1 rounded-md text-xs font-medium text-purple-400 bg-purple-400/10 border border-purple-400/30">
+                  Revision
+                </span>
+              )}
+              {problem.difficulty && (
+                <span className={`px-2 py-1 rounded-md text-xs font-medium ${getDifficultyColor(problem.difficulty)}`}>
+                  {problem.difficulty}
+                </span>
+              )}
+              {problem.platform && (
+                <span className="px-2 py-1 rounded-md text-xs font-medium text-cyan-400 bg-cyan-400/10 border border-cyan-400/30">
+                  {problem.platform}
+                </span>
+              )}
+            </div>
+            
+            {/* Problem Title */}
+            <h3 className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors leading-relaxed mb-2">
+              {isLink ? (
+                <a 
+                  href={problem.problem} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:text-cyan-400 hover:underline inline-flex items-center gap-1 break-all"
+                >
+                  {problem.problem}
+                  <svg className="w-3 h-3 opacity-60 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              ) : (
+                problem.problem
+              )}
+            </h3>
+            
+            {/* Progress Tracker */}
+            <SolveTracker count={problem.solveCount} />
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-3">
+            {canUndo && !showSuccess && (
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleUndo} 
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors duration-200 hover:bg-orange-500/20 hover:text-orange-400" 
+                title="Undo this revision"
+                type="button"
+              >
+                <FiUndo />
+              </motion.button>
+            )}
+            
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSolve}
+              disabled={isSolving || showSuccess}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                showSuccess
+                  ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-400/40'
+                  : isSolving
+                  ? 'bg-emerald-500/20 text-emerald-400 cursor-not-allowed border border-emerald-400/20'
+                  : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-400/30 hover:border-emerald-400/50'
+              }`}
+            >
+              <motion.div
+                animate={showSuccess ? { rotate: [0, 360] } : {}}
+                transition={{ duration: 0.5 }}
+              >
+                {showSuccess ? <CheckCircle /> : <FiCheck />}
+              </motion.div>
+              <span>
+                {showSuccess ? 'Solved!' : isSolving ? 'Solving...' : 'Solve'}
+              </span>
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Tags Display */}
+        {problem.tags && problem.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {problem.tags.slice(0, 3).map((tag, index) => (
+              <span key={index} className="px-2 py-1 text-xs rounded-md bg-slate-700/50 text-slate-300 border border-slate-600/30">
+                {tag}
+              </span>
+            ))}
+            {problem.tags.length > 3 && (
+              <span className="px-2 py-1 text-xs rounded-md bg-slate-700/50 text-slate-400 border border-slate-600/30">
+                +{problem.tags.length - 3} more
+              </span>
+            )}
+          </div>
         )}
-      </span>
-      
-      <motion.button
-        onClick={handleSolve}
-        disabled={isSolving}
-        className={`flex flex-shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
-          showSuccess
-            ? 'bg-emerald-500/30 text-emerald-300'
-            : isSolving
-            ? 'bg-emerald-500/20 text-emerald-400 cursor-not-allowed'
-            : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-        }`}
-        whileTap={{ scale: 0.95 }}
-        animate={showSuccess ? { rotate: [0, 5, -5, 0] } : {}}
-      >
-        <motion.div
-          animate={showSuccess ? { scale: [1, 1.2, 1] } : {}}
-          transition={{ duration: 0.3 }}
-        >
-          {showSuccess ? <CheckCircle /> : <FiCheck />}
-        </motion.div>
-        <span>{showSuccess ? 'Completed!' : isSolving ? 'Solving...' : 'Solved'}</span>
-      </motion.button>
+      </div>
       
       {/* Success particle effect */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div
             initial={{ scale: 0, opacity: 1 }}
-            animate={{ scale: 2, opacity: 0 }}
+            animate={{ scale: 1.5, opacity: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="absolute right-4 text-emerald-400 pointer-events-none"
+            transition={{ duration: 0.8 }}
+            className="absolute top-4 right-4 text-emerald-400 pointer-events-none text-lg"
           >
             ✨
           </motion.div>
@@ -113,8 +239,9 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove }) => {
   );
 };
 
-export default function RevisionList({ problems, onMarkAsSolved }) {
-  // Initialize with items from sessionStorage
+// --- Main Component ---
+export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision }) {
+  // Enhanced session storage management with daily reset
   const [locallyRemovedIds, setLocallyRemovedIds] = useState(() => {
     const stored = sessionStorage.getItem('revision-removed-today');
     return stored ? new Set(JSON.parse(stored)) : new Set();
@@ -123,34 +250,39 @@ export default function RevisionList({ problems, onMarkAsSolved }) {
   const handleLocalRemove = (problemId) => {
     const newSet = new Set([...locallyRemovedIds, problemId]);
     setLocallyRemovedIds(newSet);
-    // Save to sessionStorage
+    // Save to sessionStorage with today's key
     sessionStorage.setItem('revision-removed-today', JSON.stringify([...newSet]));
   };
 
-  // Clear removed items at midnight
+  // Enhanced daily reset functionality
   useEffect(() => {
-    const checkNewDay = () => {
-      const stored = sessionStorage.getItem('revision-removed-date');
+    const checkAndResetDaily = () => {
+      const storedDate = sessionStorage.getItem('revision-removed-date');
       const today = new Date().toDateString();
       
-      if (stored !== today) {
+      if (storedDate !== today) {
+        // New day detected - clear removed items
         sessionStorage.removeItem('revision-removed-today');
         sessionStorage.setItem('revision-removed-date', today);
         setLocallyRemovedIds(new Set());
       }
     };
     
-    checkNewDay();
-    const interval = setInterval(checkNewDay, 60 * 60 * 1000);
+    // Check immediately
+    checkAndResetDaily();
+    
+    // Check every minute for date changes
+    const interval = setInterval(checkAndResetDaily, 60 * 1000);
+    
     return () => clearInterval(interval);
   }, []);
 
-  // Enhanced filtering: remove locally removed + problems solved today
+  // Enhanced filtering logic
   const visibleProblems = problems.filter(p => {
-    // Don't show if locally removed
+    // Don't show if locally removed today
     if (locallyRemovedIds.has(p.id)) return false;
     
-    // Don't show if solved today (extra safety)
+    // Don't show problems that were solved today (additional safety)
     if (p.date) {
       const lastSolved = p.date.toDate();
       const today = new Date();
@@ -161,82 +293,106 @@ export default function RevisionList({ problems, onMarkAsSolved }) {
     return true;
   });
 
+  // Group problems by intervals
   const dueProblems = INTERVALS.map(interval => ({
     ...interval,
     problems: visibleProblems.filter(p => isDue(p, interval)),
-  }));
+  })).filter(group => group.problems.length > 0); // Only show groups with problems
 
   const totalDue = dueProblems.reduce((sum, group) => sum + group.problems.length, 0);
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-slate-200">Today's Revision Schedule</h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-slate-100">Today's Revision Schedule</h2>
         {totalDue > 0 && (
-          <motion.span 
+          <motion.div 
             key={totalDue}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            className="px-2 py-1 text-xs font-bold bg-cyan-500/20 text-cyan-400 rounded-full"
+            initial={{ scale: 1.2, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="flex items-center gap-2"
           >
-            {totalDue} due
-          </motion.span>
+            <span className="px-3 py-1 text-sm font-bold bg-cyan-500/20 text-cyan-400 rounded-full border border-cyan-500/30">
+              {totalDue} due
+            </span>
+          </motion.div>
         )}
       </div>
       
+      {/* Content */}
       {totalDue === 0 ? (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-700 p-12 text-center"
+          transition={{ delay: 0.2 }}
+          className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-700/50 p-16 text-center bg-slate-800/20"
         >
-          <motion.span 
-            className="text-4xl"
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          <motion.div 
+            className="text-6xl mb-4"
+            animate={{ 
+              rotate: [0, 10, -10, 0],
+              scale: [1, 1.1, 1]
+            }}
+            transition={{ 
+              duration: 2, 
+              repeat: Infinity, 
+              repeatDelay: 5,
+              ease: "easeInOut"
+            }}
           >
             🎉
-          </motion.span>
-          <p className="mt-4 font-semibold text-slate-300">All caught up!</p>
-          <p className="mt-1 text-sm text-slate-500">No problems are due for revision today.</p>
+          </motion.div>
+          <h3 className="text-xl font-bold text-slate-300 mb-2">All caught up!</h3>
+          <p className="text-slate-500 max-w-md">
+            No problems are due for revision today. Great job staying on top of your practice!
+          </p>
         </motion.div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <AnimatePresence mode="popLayout">
-            {dueProblems.map(({ label, problems: dueItems }) => (
-              dueItems.length > 0 && (
-                <motion.div 
-                  key={label}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-bold text-cyan-400">{label}</h3>
-                    <motion.span 
-                      key={`${label}-${dueItems.length}`}
-                      initial={{ scale: 1.2 }}
-                      animate={{ scale: 1 }}
-                      className="text-xs font-bold text-slate-500 px-2 py-0.5 bg-slate-700/50 rounded-full"
-                    >
-                      {dueItems.length} problem{dueItems.length > 1 ? 's' : ''}
-                    </motion.span>
-                  </div>
-                  <motion.ul layout className="space-y-2">
-                    <AnimatePresence mode="popLayout">
-                      {dueItems.map(problem => (
-                        <RevisionItem 
-                          key={problem.id} 
-                          problem={problem} 
-                          onSolve={onMarkAsSolved}
-                          onLocalRemove={handleLocalRemove}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </motion.ul>
-                </motion.div>
-              )
+            {dueProblems.map(({ label, problems: dueItems, color = 'cyan' }) => (
+              <motion.div 
+                key={label}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
+                className="space-y-4"
+              >
+                {/* Section Header */}
+                <div className="flex items-center gap-3">
+                  <motion.h3 
+                    className={`text-lg font-bold text-${color}-400`}
+                    layoutId={`header-${label}`}
+                  >
+                    {label}
+                  </motion.h3>
+                  <motion.span 
+                    key={`${label}-${dueItems.length}`}
+                    initial={{ scale: 1.2, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="px-2 py-1 text-xs font-bold text-slate-400 bg-slate-700/50 rounded-full border border-slate-600/50"
+                  >
+                    {dueItems.length} problem{dueItems.length > 1 ? 's' : ''}
+                  </motion.span>
+                </div>
+                
+                {/* Problems List */}
+                <motion.ul layout className="space-y-3">
+                  <AnimatePresence mode="popLayout">
+                    {dueItems.map(problem => (
+                      <RevisionItem 
+                        key={problem.id} 
+                        problem={problem} 
+                        onSolve={onMarkAsSolved}
+                        onUndoRevision={onUndoRevision}
+                        onLocalRemove={handleLocalRemove}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </motion.ul>
+              </motion.div>
             ))}
           </AnimatePresence>
         </div>

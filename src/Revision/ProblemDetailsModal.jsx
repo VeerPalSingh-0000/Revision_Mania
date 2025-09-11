@@ -6,6 +6,47 @@ import { INTERVALS } from './constants';
 const FiX = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 const FiCalendar = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const FiCheckSquare = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
+const FiRepeat = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>;
+const FiTrendingUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
+const FiTag = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
+const FiExternalLink = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>;
+const FiClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
+
+// --- Helper Components ---
+const SolveTracker = ({ count }) => (
+  <div className="flex items-center gap-1.5">
+    {[...Array(4)].map((_, i) => (
+      <div
+        key={i}
+        className={`h-3 w-3 rounded-full transition-all duration-300 ${
+          i < (count || 0) 
+            ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm shadow-emerald-500/25' 
+            : 'bg-slate-600'
+        }`}
+      />
+    ))}
+    <span className="ml-2 text-sm font-medium text-slate-300">{count || 0}/4</span>
+  </div>
+);
+
+const DifficultyBadge = ({ difficulty }) => {
+  const getDifficultyColor = (difficulty) => {
+    switch(difficulty?.toLowerCase()) {
+      case 'easy': return 'text-green-400 bg-green-400/20 border-green-400/30';
+      case 'medium': return 'text-yellow-400 bg-yellow-400/20 border-yellow-400/30';
+      case 'hard': return 'text-red-400 bg-red-400/20 border-red-400/30';
+      default: return 'text-slate-400 bg-slate-400/20 border-slate-400/30';
+    }
+  };
+
+  if (!difficulty) return null;
+
+  return (
+    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getDifficultyColor(difficulty)}`}>
+      {difficulty}
+    </span>
+  );
+};
 
 // --- Helper to calculate the next due date ---
 function getNextDueDate(lastSolvedDate, solveCount) {
@@ -16,59 +57,226 @@ function getNextDueDate(lastSolvedDate, solveCount) {
 }
 
 // --- Main Modal Component ---
-export default function ProblemDetailsModal({ problem, onClose }) {
+export default function ProblemDetailsModal({ problem, onClose, onMarkAsSolved, onUndoRevision }) {
   if (!problem) return null;
 
+  const isLink = problem.problem.startsWith('http');
+  const isRevision = problem.isRevision || problem.originalProblemId;
   const lastSolved = problem.date.toDate();
   const nextDueDate = getNextDueDate(lastSolved, problem.solveCount);
   
-  const formatDate = (date) => date.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  // Check if this revision can be undone (within 5 minutes)
+  const canUndo = isRevision && problem.createdAt && 
+    ((new Date() - problem.createdAt.toDate()) / 1000 / 60) <= 5;
+
+  const formatDate = (date) => date.toLocaleDateString('en-GB', { 
+    day: '2-digit', 
+    month: 'long', 
+    year: 'numeric',
+    weekday: 'short'
+  });
+
+  const formatTime = (date) => date.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const getDaysUntilDue = () => {
+    const today = new Date();
+    const diffTime = nextDueDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''}`;
+    if (diffDays === 0) return 'Due today';
+    if (diffDays === 1) return 'Due tomorrow';
+    return `Due in ${diffDays} days`;
+  };
+
+  const handleSolveAgain = () => {
+    if (typeof onMarkAsSolved === 'function') {
+      onMarkAsSolved(problem.id, problem.solveCount, true);
+      onClose();
+    }
+  };
+
+  const handleUndo = () => {
+    if (typeof onUndoRevision === 'function') {
+      onUndoRevision(problem.id);
+      onClose();
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
+        initial={{ scale: 0.9, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, y: 20, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        className="relative w-full max-w-md rounded-xl border border-slate-700 bg-slate-800 p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal
+        className="relative w-full max-w-lg rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900 p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute top-3 right-3">
-            <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-700 hover:text-slate-200">
-                <FiX />
+        {/* Close Button */}
+        <button 
+          onClick={onClose} 
+          className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-700/50 hover:text-slate-200"
+        >
+          <FiX />
+        </button>
+
+        {/* Header */}
+        <div className="pr-10 mb-6">
+          {/* Revision Badge */}
+          {isRevision && (
+            <div className="mb-3 flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full text-xs font-medium text-purple-400 bg-purple-400/20 border border-purple-400/30 flex items-center gap-1">
+                <FiRepeat className="w-3 h-3" />
+                Revision
+              </span>
+              {canUndo && (
+                <span className="text-xs text-orange-400">(Can be undone)</span>
+              )}
+            </div>
+          )}
+
+          {/* Problem Title */}
+          <h2 className="text-xl font-bold text-slate-100 leading-tight mb-3">
+            {isLink ? (
+              <a 
+                href={problem.problem} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-cyan-400 transition-colors inline-flex items-center gap-2 break-all"
+              >
+                {problem.problem}
+                <FiExternalLink className="flex-shrink-0" />
+              </a>
+            ) : (
+              problem.problem
+            )}
+          </h2>
+
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2">
+            <DifficultyBadge difficulty={problem.difficulty} />
+            {problem.platform && (
+              <span className="px-3 py-1 rounded-full text-sm font-medium text-cyan-400 bg-cyan-400/20 border border-cyan-400/30">
+                {problem.platform}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Progress Section */}
+        <div className="mb-6 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
+              <FiTrendingUp />
+            </div>
+            <div>
+              <p className="text-sm text-slate-400">Solve Progress</p>
+              <SolveTracker count={problem.solveCount} />
+            </div>
+          </div>
+        </div>
+
+        {/* Details Grid */}
+        <div className="space-y-4 mb-6">
+          {/* Last Solved */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
+              <FiCheckSquare />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-slate-400">Last Solved</p>
+              <p className="font-medium text-slate-200">
+                {formatDate(lastSolved)}
+                <span className="text-sm text-slate-400 ml-2">
+                  at {formatTime(lastSolved)}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* Next Due Date */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400">
+              <FiCalendar />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-slate-400">Next Revision Due</p>
+              <p className="font-medium text-slate-200">{formatDate(nextDueDate)}</p>
+              <p className="text-xs text-slate-400">{getDaysUntilDue()}</p>
+            </div>
+          </div>
+
+          {/* Creation Date for Revisions */}
+          {isRevision && problem.createdAt && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20 text-purple-400">
+                <FiClock />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-slate-400">Revision Created</p>
+                <p className="font-medium text-slate-200">
+                  {formatDate(problem.createdAt.toDate())}
+                  <span className="text-sm text-slate-400 ml-2">
+                    at {formatTime(problem.createdAt.toDate())}
+                  </span>
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Tags Section */}
+        {problem.tags && problem.tags.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <FiTag className="text-slate-400" />
+              <h3 className="text-sm font-medium text-slate-400">Tags</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {problem.tags.map((tag, index) => (
+                <span 
+                  key={index} 
+                  className="px-2 py-1 text-xs rounded-md bg-slate-700/50 text-slate-300 border border-slate-600/50"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-4 border-t border-slate-700/50">
+          {canUndo && (
+            <button
+              onClick={handleUndo}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-orange-500/20 text-orange-400 font-medium transition-colors hover:bg-orange-500/30 border border-orange-500/30"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+              Undo Revision
             </button>
+          )}
+          
+          <button
+            onClick={handleSolveAgain}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-500/20 text-emerald-400 font-medium transition-colors hover:bg-emerald-500/30 border border-emerald-500/30"
+          >
+            <FiRepeat />
+            Solve Again
+          </button>
         </div>
-
-        <h2 className="pr-8 text-lg font-semibold text-slate-100">{problem.problem}</h2>
-        
-        <div className="mt-6 space-y-4">
-            <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
-                    <FiCheckSquare />
-                </div>
-                <div>
-                    <p className="text-sm text-slate-400">Last Solved</p>
-                    <p className="font-medium text-slate-200">{formatDate(lastSolved)}</p>
-                </div>
-            </div>
-            <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400">
-                    <FiCalendar />
-                </div>
-                <div>
-                    <p className="text-sm text-slate-400">Next Revision Due</p>
-                    <p className="font-medium text-slate-200">{formatDate(nextDueDate)}</p>
-                </div>
-            </div>
-        </div>
-
       </motion.div>
     </motion.div>
   );
