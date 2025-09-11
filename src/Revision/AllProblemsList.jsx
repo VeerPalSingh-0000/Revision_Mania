@@ -415,28 +415,43 @@ export default function AllProblemsList({ problems, onBack, onDeleteProblem, onM
           </div>
           
           {/* Stats */}
-          <div className="grid grid-cols-5 gap-4 mt-6">
-            <div className="text-center p-3 rounded-lg bg-slate-700/40">
-              <div className="text-2xl font-bold text-slate-200">{problems.length}</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Total Problems</div>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-slate-700/40">
-              <div className="text-2xl font-bold text-emerald-400">{totalSolves}</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Total Solves</div>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-slate-700/40">
-              <div className="text-2xl font-bold text-purple-400">{totalRevisions}</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Revisions</div>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-slate-700/40">
-              <div className="text-2xl font-bold text-orange-400">{totalUndoable}</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Undoable</div>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-slate-700/40">
-              <div className="text-2xl font-bold text-cyan-400">{groupedProblems.length}</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Active Days</div>
-            </div>
-          </div>
+          {/* Compact Stats */}
+{/* Enhanced Stats */}
+<div className="mt-6">
+  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    {/* Total Problems */}
+    <div className="flex flex-col items-center p-6 rounded-xl bg-gradient-to-br from-slate-800/60 to-slate-700/60 border border-slate-600/30 hover:border-slate-500/50 transition-all duration-300">
+      <div className="text-3xl font-bold text-slate-100 mb-2">{problems.length}</div>
+      <div className="text-xs text-slate-400 uppercase tracking-wider font-medium text-center">Total Problems</div>
+    </div>
+
+    {/* Total Solves */}
+    <div className="flex flex-col items-center p-6 rounded-xl bg-gradient-to-br from-emerald-900/40 to-emerald-800/40 border border-emerald-500/30 hover:border-emerald-400/50 transition-all duration-300">
+      <div className="text-3xl font-bold text-emerald-400 mb-2">{totalSolves}</div>
+      <div className="text-xs text-slate-400 uppercase tracking-wider font-medium text-center">Total Solves</div>
+    </div>
+
+    {/* Revisions */}
+    <div className="flex flex-col items-center p-6 rounded-xl bg-gradient-to-br from-purple-900/40 to-purple-800/40 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300">
+      <div className="text-3xl font-bold text-purple-400 mb-2">{totalRevisions}</div>
+      <div className="text-xs text-slate-400 uppercase tracking-wider font-medium text-center">Revisions</div>
+    </div>
+
+    {/* Undoable */}
+    <div className="flex flex-col items-center p-6 rounded-xl bg-gradient-to-br from-orange-900/40 to-orange-800/40 border border-orange-500/30 hover:border-orange-400/50 transition-all duration-300">
+      <div className="text-3xl font-bold text-orange-400 mb-2">{totalUndoable}</div>
+      <div className="text-xs text-slate-400 uppercase tracking-wider font-medium text-center">Undoable</div>
+    </div>
+
+    {/* Active Days */}
+    <div className="flex flex-col items-center p-6 rounded-xl bg-gradient-to-br from-cyan-900/40 to-cyan-800/40 border border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300">
+      <div className="text-3xl font-bold text-cyan-400 mb-2">{groupedProblems.length}</div>
+      <div className="text-xs text-slate-400 uppercase tracking-wider font-medium text-center">Active Days</div>
+    </div>
+  </div>
+</div>
+
+
         </div>
 
         {/* Problems List */}
