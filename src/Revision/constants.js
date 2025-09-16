@@ -2,7 +2,7 @@
 
 export const INTERVALS = [
   // // --- ADD THIS LINE FOR DEBUGGING ---
-  // { label: "Due Today (Debug)", days: 0 }, 
+  { label: "Due Today (Debug)", days: 0 }, 
 
   // Your existing intervals
   { label: "1 Day", days: 1 },

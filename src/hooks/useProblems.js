@@ -95,8 +95,16 @@ export function useProblems(user) {
             createdAt: Timestamp.fromDate(new Date()),
         };
         batch.set(newRevisionRef, revisionData);
+        
         const originalProblemRef = doc(db, "problems", originalProblem.id);
-        batch.update(originalProblemRef, { solveCount: increment(1) });
+        
+        // --- THIS IS THE FIX ---
+        // Also update the original problem's 'date' to reset its schedule
+        batch.update(originalProblemRef, { 
+            solveCount: increment(1),
+            date: Timestamp.fromDate(new Date()) 
+        });
+        
         await batch.commit();
         return { success: true };
       } catch (err) {
@@ -129,8 +137,6 @@ export function useProblems(user) {
     }
   }, [problems]);
   
-  // --- THIS IS THE FIX ---
-  // Ensure all the functions your app needs are included in this return object.
   return { 
     problems, 
     isLoading, 
