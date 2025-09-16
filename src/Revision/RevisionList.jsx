@@ -153,9 +153,6 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
             <SolveTracker count={problem.solveCount} />
           </div>
           
-          {/* --- THIS IS THE FIX --- */}
-          {/* These classes make buttons always visible on mobile (opacity-100), */}
-          {/* but use the hover effect on medium screens and up (md:opacity-0). */}
           <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 ml-3">
             {canUndo && !showSuccess && (
               <motion.button 
@@ -213,7 +210,6 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
         )}
       </div>
       
-      {/* Success particle effect */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div
@@ -234,24 +230,27 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
 // --- Main Component ---
 export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision }) {
   const [locallyRemovedIds, setLocallyRemovedIds] = useState(() => {
-    const stored = sessionStorage.getItem('revision-removed-today');
+    // --- FIX #1: Read from localStorage ---
+    const stored = localStorage.getItem('revision-removed-today');
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
 
   const handleLocalRemove = (problemId) => {
     const newSet = new Set([...locallyRemovedIds, problemId]);
     setLocallyRemovedIds(newSet);
-    sessionStorage.setItem('revision-removed-today', JSON.stringify([...newSet]));
+    // --- FIX #2: Save to localStorage ---
+    localStorage.setItem('revision-removed-today', JSON.stringify([...newSet]));
   };
 
   useEffect(() => {
     const checkAndResetDaily = () => {
-      const storedDate = sessionStorage.getItem('revision-removed-date');
+      // Logic now correctly uses localStorage
+      const storedDate = localStorage.getItem('revision-removed-date');
       const today = new Date().toDateString();
       
       if (storedDate !== today) {
-        sessionStorage.removeItem('revision-removed-today');
-        sessionStorage.setItem('revision-removed-date', today);
+        localStorage.removeItem('revision-removed-today');
+        localStorage.setItem('revision-removed-date', today);
         setLocallyRemovedIds(new Set());
       }
     };
