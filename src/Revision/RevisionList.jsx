@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react'; // No longer need useState or useEffect
 import { INTERVALS } from './constants';
 import { isDue } from './utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,7 +41,7 @@ const SolveTracker = ({ count }) => (
   </div>
 );
 
-const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
+const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
   const [isSolving, setIsSolving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const isLink = problem.problem.startsWith('http');
@@ -56,15 +56,14 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
     setTimeout(async () => {
       try {
         await onSolve(problem.id, problem.solveCount, true);
-        setTimeout(() => {
-          onLocalRemove(problem.id);
-        }, 800);
+        // No need for onLocalRemove; the component will disappear automatically
+        // when the parent's `problems` prop updates.
       } catch (error) {
         console.error('Error solving problem:', error);
-        setShowSuccess(false);
-      } finally {
-        setIsSolving(false);
+        setShowSuccess(false); // Only reset on error
       }
+      // No 'finally' block needed, as we want the component to stay in a "solving" state
+      // until it is removed from the list.
     }, 600);
   };
 
@@ -193,7 +192,6 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
           </div>
         </div>
 
-        {/* Tags Display */}
         {problem.tags && problem.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {problem.tags.slice(0, 3).map((tag, index) => (
@@ -227,39 +225,20 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
   );
 };
 
+
 // --- Main Component ---
 export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision }) {
-  const [locallyRemovedIds, setLocallyRemovedIds] = useState(() => {
-    // --- FIX #1: Read from localStorage ---
-    const stored = localStorage.getItem('revision-removed-today');
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  });
+  
+  // --- NEW LOGIC: Determine solved problems directly from Firebase data ---
+  const todayString = new Date().toDateString();
 
-  const handleLocalRemove = (problemId) => {
-    const newSet = new Set([...locallyRemovedIds, problemId]);
-    setLocallyRemovedIds(newSet);
-    // --- FIX #2: Save to localStorage ---
-    localStorage.setItem('revision-removed-today', JSON.stringify([...newSet]));
-  };
+  const todaysRevisionsOriginalIds = new Set(
+    problems
+      .filter(p => p.isRevision && p.createdAt?.toDate().toDateString() === todayString)
+      .map(p => p.originalProblemId)
+  );
 
-  useEffect(() => {
-    const checkAndResetDaily = () => {
-      // Logic now correctly uses localStorage
-      const storedDate = localStorage.getItem('revision-removed-date');
-      const today = new Date().toDateString();
-      
-      if (storedDate !== today) {
-        localStorage.removeItem('revision-removed-today');
-        localStorage.setItem('revision-removed-date', today);
-        setLocallyRemovedIds(new Set());
-      }
-    };
-    checkAndResetDaily();
-    const interval = setInterval(checkAndResetDaily, 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const visibleProblems = problems.filter(p => !locallyRemovedIds.has(p.id));
+  const visibleProblems = problems.filter(p => !todaysRevisionsOriginalIds.has(p.id));
 
   const dueProblems = INTERVALS.map(interval => ({
     ...interval,
@@ -327,7 +306,7 @@ export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision 
               >
                 <div className="flex items-center gap-3">
                   <motion.h3 
-                    className={`text-lg font-bold text-${color}-400`}
+                    className={`text-lg font-bold text-cyan-400`} // Simplified color
                     layoutId={`header-${label}`}
                   >
                     {label}
@@ -350,7 +329,6 @@ export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision 
                         problem={problem} 
                         onSolve={onMarkAsSolved}
                         onUndoRevision={onUndoRevision}
-                        onLocalRemove={handleLocalRemove}
                       />
                     ))}
                   </AnimatePresence>
