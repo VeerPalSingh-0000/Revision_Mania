@@ -268,8 +268,7 @@ export default function RevisionApp({ user }) {
           className="mt-8 text-center text-xs text-slate-500"
         >
           <p>
-            Built with React & Framer Motion • 
-            <span className="ml-1">Keep practicing, keep improving! 🚀</span>
+            &copy; {new Date().getFullYear()} Revision Mania. Built with ❤️ by Veer Pal Singh.
           </p>
         </motion.footer>
       </motion.div>

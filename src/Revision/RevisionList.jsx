@@ -44,27 +44,18 @@ const SolveTracker = ({ count }) => (
 const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
   const [isSolving, setIsSolving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [justSolved, setJustSolved] = useState(false);
   const isLink = problem.problem.startsWith('http');
   const isRevision = problem.isRevision || problem.originalProblemId;
   
-  // Check if this revision can be undone (within 5 minutes)
   const canUndo = isRevision && problem.createdAt && 
     ((new Date() - problem.createdAt.toDate()) / 1000 / 60) <= 5;
 
   const handleSolve = async () => {
     setIsSolving(true);
-    
-    // Show success animation
     setShowSuccess(true);
-    
-    // Small delay for visual feedback
     setTimeout(async () => {
       try {
-        await onSolve(problem.id, problem.solveCount, true); // Create revision
-        setJustSolved(true);
-        
-        // Remove from local revision view after a short delay
+        await onSolve(problem.id, problem.solveCount, true);
         setTimeout(() => {
           onLocalRemove(problem.id);
         }, 800);
@@ -116,7 +107,6 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
           : 'bg-slate-800/60 border border-slate-700/50 hover:bg-slate-800/80 hover:border-slate-600/50'
       }`}
     >
-      {/* Content */}
       <div className="flex flex-col gap-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -163,8 +153,10 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
             <SolveTracker count={problem.solveCount} />
           </div>
           
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-3">
+          {/* --- THIS IS THE FIX --- */}
+          {/* These classes make buttons always visible on mobile (opacity-100), */}
+          {/* but use the hover effect on medium screens and up (md:opacity-0). */}
+          <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 ml-3">
             {canUndo && !showSuccess && (
               <motion.button 
                 whileHover={{ scale: 1.05 }}
@@ -241,7 +233,6 @@ const RevisionItem = ({ problem, onSolve, onLocalRemove, onUndoRevision }) => {
 
 // --- Main Component ---
 export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision }) {
-  // Enhanced session storage management with daily reset
   const [locallyRemovedIds, setLocallyRemovedIds] = useState(() => {
     const stored = sessionStorage.getItem('revision-removed-today');
     return stored ? new Set(JSON.parse(stored)) : new Set();
@@ -250,60 +241,36 @@ export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision 
   const handleLocalRemove = (problemId) => {
     const newSet = new Set([...locallyRemovedIds, problemId]);
     setLocallyRemovedIds(newSet);
-    // Save to sessionStorage with today's key
     sessionStorage.setItem('revision-removed-today', JSON.stringify([...newSet]));
   };
 
-  // Enhanced daily reset functionality
   useEffect(() => {
     const checkAndResetDaily = () => {
       const storedDate = sessionStorage.getItem('revision-removed-date');
       const today = new Date().toDateString();
       
       if (storedDate !== today) {
-        // New day detected - clear removed items
         sessionStorage.removeItem('revision-removed-today');
         sessionStorage.setItem('revision-removed-date', today);
         setLocallyRemovedIds(new Set());
       }
     };
-    
-    // Check immediately
     checkAndResetDaily();
-    
-    // Check every minute for date changes
     const interval = setInterval(checkAndResetDaily, 60 * 1000);
-    
     return () => clearInterval(interval);
   }, []);
 
-  // Enhanced filtering logic
-  const visibleProblems = problems.filter(p => {
-    // Don't show if locally removed today
-    if (locallyRemovedIds.has(p.id)) return false;
-    
-    // Don't show problems that were solved today (additional safety)
-    if (p.date) {
-      const lastSolved = p.date.toDate();
-      const today = new Date();
-      const isToday = lastSolved.toDateString() === today.toDateString();
-      if (isToday && p.solveCount > 0) return false;
-    }
-    
-    return true;
-  });
+  const visibleProblems = problems.filter(p => !locallyRemovedIds.has(p.id));
 
-  // Group problems by intervals
   const dueProblems = INTERVALS.map(interval => ({
     ...interval,
     problems: visibleProblems.filter(p => isDue(p, interval)),
-  })).filter(group => group.problems.length > 0); // Only show groups with problems
+  })).filter(group => group.problems.length > 0);
 
   const totalDue = dueProblems.reduce((sum, group) => sum + group.problems.length, 0);
-
+  
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-slate-100">Today's Revision Schedule</h2>
         {totalDue > 0 && (
@@ -320,7 +287,6 @@ export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision 
         )}
       </div>
       
-      {/* Content */}
       {totalDue === 0 ? (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -360,7 +326,6 @@ export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision 
                 exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
                 className="space-y-4"
               >
-                {/* Section Header */}
                 <div className="flex items-center gap-3">
                   <motion.h3 
                     className={`text-lg font-bold text-${color}-400`}
@@ -378,7 +343,6 @@ export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision 
                   </motion.span>
                 </div>
                 
-                {/* Problems List */}
                 <motion.ul layout className="space-y-3">
                   <AnimatePresence mode="popLayout">
                     {dueItems.map(problem => (
