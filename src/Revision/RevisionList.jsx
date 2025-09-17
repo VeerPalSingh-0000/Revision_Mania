@@ -1,4 +1,4 @@
-import React from 'react'; // No longer need useState or useEffect
+import React , { useState } from 'react'; // No longer need useState or useEffect
 import { INTERVALS } from './constants';
 import { isDue } from './utils';
 import { motion, AnimatePresence } from 'framer-motion';
