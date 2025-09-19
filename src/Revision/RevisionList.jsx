@@ -1,7 +1,7 @@
-import React , { useState } from 'react'; // No longer need useState or useEffect
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { INTERVALS } from './constants';
 import { isDue } from './utils';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SVG Icon Components ---
 const FiCheck = () => (
@@ -9,14 +9,12 @@ const FiCheck = () => (
     <polyline points="20 6 9 17 4 12"></polyline>
   </svg>
 );
-
 const CheckCircle = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
     <polyline points="22 4 12 14.01 9 11.01"></polyline>
   </svg>
 );
-
 const FiUndo = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -56,14 +54,10 @@ const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
     setTimeout(async () => {
       try {
         await onSolve(problem.id, problem.solveCount, true);
-        // No need for onLocalRemove; the component will disappear automatically
-        // when the parent's `problems` prop updates.
       } catch (error) {
         console.error('Error solving problem:', error);
-        setShowSuccess(false); // Only reset on error
+        setShowSuccess(false); 
       }
-      // No 'finally' block needed, as we want the component to stay in a "solving" state
-      // until it is removed from the list.
     }, 600);
   };
 
@@ -109,7 +103,6 @@ const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
       <div className="flex flex-col gap-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            {/* Tags and Badges */}
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               {isRevision && (
                 <span className="px-2 py-1 rounded-md text-xs font-medium text-purple-400 bg-purple-400/10 border border-purple-400/30">
@@ -128,7 +121,6 @@ const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
               )}
             </div>
             
-            {/* Problem Title */}
             <h3 className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors leading-relaxed mb-2">
               {isLink ? (
                 <a 
@@ -148,7 +140,6 @@ const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
               )}
             </h3>
             
-            {/* Progress Tracker */}
             <SolveTracker count={problem.solveCount} />
           </div>
           
@@ -165,7 +156,6 @@ const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
                 <FiUndo />
               </motion.button>
             )}
-            
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -225,28 +215,16 @@ const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
   );
 };
 
-
 // --- Main Component ---
 export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision }) {
-  
-  // --- NEW LOGIC: Determine solved problems directly from Firebase data ---
-  const todayString = new Date().toDateString();
-
-  const todaysRevisionsOriginalIds = new Set(
-    problems
-      .filter(p => p.isRevision && p.createdAt?.toDate().toDateString() === todayString)
-      .map(p => p.originalProblemId)
-  );
-
-  const visibleProblems = problems.filter(p => !todaysRevisionsOriginalIds.has(p.id));
-
+  // Only show original (non-revision) problems that are due
   const dueProblems = INTERVALS.map(interval => ({
     ...interval,
-    problems: visibleProblems.filter(p => isDue(p, interval)),
+    problems: problems.filter(p => isDue(p, interval) && !p.isRevision), // Only originals!
   })).filter(group => group.problems.length > 0);
 
   const totalDue = dueProblems.reduce((sum, group) => sum + group.problems.length, 0);
-  
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -264,7 +242,6 @@ export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision 
           </motion.div>
         )}
       </div>
-      
       {totalDue === 0 ? (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -306,7 +283,7 @@ export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision 
               >
                 <div className="flex items-center gap-3">
                   <motion.h3 
-                    className={`text-lg font-bold text-cyan-400`} // Simplified color
+                    className={`text-lg font-bold text-cyan-400`}
                     layoutId={`header-${label}`}
                   >
                     {label}
