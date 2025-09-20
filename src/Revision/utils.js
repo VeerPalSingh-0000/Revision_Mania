@@ -1,3 +1,5 @@
+// src/Revision/utils.js
+
 import { Timestamp } from "firebase/firestore";
 
 /**
@@ -8,9 +10,13 @@ import { Timestamp } from "firebase/firestore";
  */
 export function isDue(problem, interval) {
   if (!problem.date) return false;
+
   const solved = problem.date.toDate();
   const now = new Date();
+  
+  // Calculate the difference in days
   const daysAgo = (now - solved) / (1000 * 60 * 60 * 24);
-  // Check if the problem was solved approximately 'interval.days' ago.
-  return Math.floor(daysAgo) === interval.days;
+  
+  // Return true if the problem is due or overdue
+  return Math.floor(daysAgo) >= interval.days;
 }

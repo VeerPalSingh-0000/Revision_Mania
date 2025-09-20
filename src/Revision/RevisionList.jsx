@@ -217,10 +217,28 @@ const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
 
 // --- Main Component ---
 export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision }) {
-  // Only show original (non-revision) problems that are due
+  // Get today's date at midnight for accurate comparison
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Find all revisions made today
+  const todaysRevisions = problems.filter(p => 
+    p.isRevision &&
+    p.date &&
+    p.date.toDate().setHours(0, 0, 0, 0) === today.getTime()
+  );
+
+  // Get the IDs of original problems that have been revised today
+  const revisedTodayIds = new Set(todaysRevisions.map(p => p.originalProblemId));
+
+  // Only show original (non-revision) problems that are due AND have not been revised today
   const dueProblems = INTERVALS.map(interval => ({
     ...interval,
-    problems: problems.filter(p => isDue(p, interval) && !p.isRevision), // Only originals!
+    problems: problems.filter(p => 
+      !p.isRevision && // Only originals!
+      isDue(p, interval) && // Check if it's due
+      !revisedTodayIds.has(p.id) // Check it hasn't been revised today
+    ),
   })).filter(group => group.problems.length > 0);
 
   const totalDue = dueProblems.reduce((sum, group) => sum + group.problems.length, 0);

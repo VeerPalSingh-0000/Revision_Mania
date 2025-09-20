@@ -1,4 +1,5 @@
 // src/firebase.js
+
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
@@ -16,9 +17,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Try specifying database name explicitly
+// Initialize services without the database name
 export const auth = getAuth(app);
-export const db = getFirestore(app, "(default)");  // ← Add database name
+export const db = getFirestore(app);
 export const storage = getStorage(app);
 
 export default app;
