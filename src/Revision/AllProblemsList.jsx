@@ -306,7 +306,7 @@ const DateSection = ({
   onUndoRevision,
   onProblemClick,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const formatDate = (dateObj) => {
     const today = new Date();
     const yesterday = new Date(today);
@@ -349,19 +349,24 @@ const DateSection = ({
           <h3 className="text-base font-semibold text-slate-200">
             {formatDate(date)}
           </h3>
-          <motion.svg
-            className="w-4 h-4 text-slate-400"
+          <motion.div
+            className="w-4 h-4 text-slate-400 flex-shrink-0"
             animate={{ rotate: isExpanded ? 90 : 0 }}
+            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
           >
-            <path
-              d="M9 5l7 7-7 7"
-              stroke="currentColor"
-              strokeWidth="2"
+            <svg
+              viewBox="0 0 24 24"
               fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
-            />
-          </motion.svg>
+              className="w-4 h-4"
+              aria-hidden="true"
+            >
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </motion.div>
         </button>{" "}
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <span className="flex items-center gap-1.5">
