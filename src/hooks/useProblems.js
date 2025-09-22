@@ -2,16 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebase';
-import { 
-  collection, 
-  query, 
-  where, 
-  addDoc, 
-  Timestamp, 
-  orderBy, 
-  doc, 
-  deleteDoc, 
-  updateDoc, 
+import {
+  collection,
+  query,
+  where,
+  addDoc,
+  Timestamp,
+  orderBy,
+  doc,
+  deleteDoc,
+  updateDoc,
   increment,
   writeBatch, // Import writeBatch for atomic operations
   onSnapshot  // Import onSnapshot for real-time updates
@@ -37,7 +37,7 @@ export function useProblems(user) {
 
     setIsLoading(true);
     const q = query(
-      collection(db, "problems"), 
+      collection(db, "problems"),
       where("uid", "==", user.uid),
       orderBy("date", "desc")
     );
@@ -45,9 +45,9 @@ export function useProblems(user) {
     // onSnapshot creates a real-time listener.
     // The UI will update automatically whenever the data changes in Firestore.
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedProblems = snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
+      const fetchedProblems = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
       }));
       setProblems(fetchedProblems);
       setIsLoading(false);
@@ -129,9 +129,12 @@ export function useProblems(user) {
         };
         batch.set(newRevisionRef, revisionData);
 
-        // 2. Update the original problem's solve count
+        // 2. Update the original problem's solve count AND date
         const originalProblemRef = doc(db, "problems", originalProblem.id);
-        batch.update(originalProblemRef, { solveCount: increment(1) });
+        batch.update(originalProblemRef, {
+            solveCount: increment(1),
+            date: Timestamp.fromDate(new Date()) // <-- THE FIX!
+        });
 
         // 3. Commit the batch
         await batch.commit();
