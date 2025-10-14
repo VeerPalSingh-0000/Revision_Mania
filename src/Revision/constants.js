@@ -9,4 +9,5 @@ export const INTERVALS = [
   { label: "3 Days", days: 3 },
   { label: "1 Week", days: 7 },
   { label: "2 Weeks", days: 14 },
+  { label: "4 Weeks", days: 28 },
 ];

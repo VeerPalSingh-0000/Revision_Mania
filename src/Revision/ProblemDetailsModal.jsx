@@ -13,12 +13,12 @@ const FiExternalLink = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" 
 const FiClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
 
 // --- Helper Components ---
-const SolveTracker = ({ count }) => ( <div className="flex items-center gap-2">{[...Array(4)].map((_, i) => ( <div key={i} className={`h-3 w-3 rounded-full transition-all duration-300 ${ i < (count || 0) ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm shadow-emerald-500/25' : 'bg-slate-600' }`} /> ))}<span className="ml-2 text-sm font-medium text-slate-300">{count || 0}/4</span></div>);
+const SolveTracker = ({ count }) => ( <div className="flex items-center gap-2">{[...Array(5)].map((_, i) => ( <div key={i} className={`h-3 w-3 rounded-full transition-all duration-300 ${ i < (count || 0) ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm shadow-emerald-500/25' : 'bg-slate-600' }`} /> ))}<span className="ml-2 text-sm font-medium text-slate-300">{count || 0}/5</span></div>);
 const DifficultyBadge = ({ difficulty }) => { const getDifficultyColor = (d) => { switch(d?.toLowerCase()) { case 'easy': return 'text-green-400 bg-green-400/20 border-green-400/30'; case 'medium': return 'text-yellow-400 bg-yellow-400/20 border-yellow-400/30'; case 'hard': return 'text-red-400 bg-red-400/20 border-red-400/30'; default: return 'text-slate-400 bg-slate-400/20 border-slate-400/30'; } }; if (!difficulty) return null; return (<span className={`px-3 py-1 rounded-full text-sm font-medium border ${getDifficultyColor(difficulty)}`}>{difficulty}</span>);};
 function getNextDueDate(lastSolvedDate, solveCount) { const nextInterval = INTERVALS[solveCount - 1] || INTERVALS[INTERVALS.length - 1]; const nextDate = new Date(lastSolvedDate.getTime()); nextDate.setDate(nextDate.getDate() + nextInterval.days); return nextDate; }
 
 // --- Main Modal Component ---
-export default function ProblemDetailsModal({ problem, onClose, onMarkAsSolved, onUndoRevision }) {
+export default function ProblemDetailsModal({ problem, onClose, onMarkAsSolved }) {
   if (!problem) return null;
 
   const containerRef = useRef(null);
@@ -26,7 +26,6 @@ export default function ProblemDetailsModal({ problem, onClose, onMarkAsSolved, 
   const isRevision = problem.isRevision || problem.originalProblemId;
   const lastSolved = problem.date.toDate();
   const nextDueDate = !isRevision ? getNextDueDate(lastSolved, problem.solveCount) : null;
-  const canUndo = isRevision && problem.createdAt && ((new Date() - problem.createdAt.toDate()) / 1000 / 60) <= 5;
 
   useEffect(() => {
     containerRef.current?.focus();
@@ -40,14 +39,12 @@ export default function ProblemDetailsModal({ problem, onClose, onMarkAsSolved, 
   const formatDate = (date) => date.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric', weekday: 'short' });
   const formatTime = (date) => date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   const getDaysUntilDue = () => { if (!nextDueDate) return null; const today = new Date(); today.setHours(0,0,0,0); const dueDate = new Date(nextDueDate); dueDate.setHours(0,0,0,0); const diffTime = dueDate - today; const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); if (diffDays < 0) return `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''}`; if (diffDays === 0) return 'Due today'; if (diffDays === 1) return 'Due tomorrow'; return `Due in ${diffDays} days`; };
-  const handleSolveAgain = () => { if (typeof onMarkAsSolved === 'function') { onMarkAsSolved(problem.id, problem.solveCount, true); onClose(); } };
-  const handleUndo = () => { if (typeof onUndoRevision === 'function') { onUndoRevision(problem.id); onClose(); } };
+  const handleSolveAgain = () => { if (typeof onMarkAsSolved === 'function') { onMarkAsSolved(problem.id); onClose(); } };
 
   const daysDiff = nextDueDate ? Math.ceil((nextDueDate - new Date()) / (1000 * 60 * 60 * 24)) : 99;
   const dueVariant = (() => { if (daysDiff < 0) return 'bg-red-600/20 text-red-300 border-red-600/30'; if (daysDiff <= 1) return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'; return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'; })();
 
   return (
-    // THE FIX #1: The overlay is a flex container that centers its child.
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -64,8 +61,6 @@ export default function ProblemDetailsModal({ problem, onClose, onMarkAsSolved, 
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.95, y: 20, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        // THE FIX #2: The card has its own scrolling and max-height.
-        // On mobile it's full-width, on desktop (sm:) it shrinks.
         className="relative w-full overflow-y-auto bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700/60 shadow-2xl max-w-2xl h-auto max-h-[95vh] p-6 pb-24 sm:pb-6"
         onClick={(e) => e.stopPropagation()}
       >
@@ -74,7 +69,7 @@ export default function ProblemDetailsModal({ problem, onClose, onMarkAsSolved, 
         </button>
 
         <div className="pr-10 mb-6">
-          {isRevision && (<div className="mb-3 flex items-center gap-3"><span className="px-3 py-1 rounded-full text-xs font-semibold text-purple-300 bg-purple-400/10 border border-purple-400/20 inline-flex items-center gap-2"><FiRepeat /> Revision</span>{canUndo && (<span className="text-xs text-orange-300">Can be undone</span>)}</div>)}
+          {isRevision && (<div className="mb-3 flex items-center gap-3"><span className="px-3 py-1 rounded-full text-xs font-semibold text-purple-300 bg-purple-400/10 border border-purple-400/20 inline-flex items-center gap-2"><FiRepeat /> Revision</span></div>)}
           <h2 className="text-xl sm:text-2xl font-bold text-slate-100 leading-tight mb-3 break-words">{isLink ? (<a href={problem.problem} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 hover:text-cyan-400 transition-colors break-words"><span className="truncate">{problem.problem}</span><FiExternalLink /></a>) : (problem.problem)}</h2>
           <div className="flex flex-wrap items-center gap-2"><DifficultyBadge difficulty={problem.difficulty} />{problem.platform && (<span className="px-3 py-1 rounded-full text-sm font-medium text-cyan-300 bg-cyan-400/10 border border-cyan-400/20">{problem.platform}</span>)}<span className="ml-auto text-sm text-slate-400">Solved {problem.solveCount || 0} time{(problem.solveCount || 0) !== 1 ? 's' : ''}</span></div>
         </div>
@@ -89,7 +84,6 @@ export default function ProblemDetailsModal({ problem, onClose, onMarkAsSolved, 
         {problem.tags && problem.tags.length > 0 && (<div className="mb-6"><div className="flex items-center gap-2 mb-3"><FiTag className="text-slate-400" /><h3 className="text-sm font-medium text-slate-400">Tags</h3></div><div className="flex flex-wrap gap-2">{problem.tags.map((tag, index) => (<span key={index} className="px-3 py-1 text-xs rounded-md bg-slate-700/50 text-slate-300 border border-slate-600/50">#{tag}</span>))}</div></div>)}
 
         <div className="flex gap-3 pt-4 border-t border-slate-700/50">
-          {canUndo && (<button onClick={handleUndo} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-orange-500/10 text-orange-300 font-medium transition-colors hover:bg-orange-500/20 border border-orange-500/30 min-h-[48px]"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>Undo</button>)}
           {!isRevision && (<button onClick={handleSolveAgain} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-500/10 text-emerald-300 font-medium transition-colors hover:bg-emerald-500/20 border border-emerald-500/30 min-h-[48px]"><FiRepeat />Solve Again</button>)}
         </div>
 

@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { INTERVALS } from './constants';
-import { isDue } from './utils';
 
 // --- SVG Icon Components ---
 const FiCheck = () => (
@@ -15,17 +14,12 @@ const CheckCircle = () => (
     <polyline points="22 4 12 14.01 9 11.01"></polyline>
   </svg>
 );
-const FiUndo = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-  </svg>
-);
 
 // --- Sub-components ---
 const SolveTracker = ({ count }) => (
   <div className="flex items-center gap-1">
     <span className="text-xs text-slate-500 mr-1">Progress:</span>
-    {[...Array(4)].map((_, i) => (
+    {[...Array(5)].map((_, i) => (
       <div
         key={i}
         className={`h-2 w-2 rounded-full transition-all duration-300 ${
@@ -35,46 +29,35 @@ const SolveTracker = ({ count }) => (
         }`}
       />
     ))}
-    <span className="text-xs text-slate-500 ml-1">{count || 0}/4</span>
+    <span className="text-xs text-slate-500 ml-1">{count || 0}/5</span>
   </div>
 );
 
-const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
+const RevisionItem = ({ problem, onSolve }) => {
   const [isSolving, setIsSolving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const isLink = problem.problem.startsWith('http');
-  const isRevision = problem.isRevision || problem.originalProblemId;
-  
-  const canUndo = isRevision && problem.createdAt && 
-    ((new Date() - problem.createdAt.toDate()) / 1000 / 60) <= 5;
 
   const handleSolve = async () => {
     setIsSolving(true);
     setShowSuccess(true);
+    // Short delay to show feedback before the item disappears
     setTimeout(async () => {
       try {
-        await onSolve(problem.id, problem.solveCount, true);
+        await onSolve(problem.id);
       } catch (error) {
         console.error('Error solving problem:', error);
-        setShowSuccess(false); 
+        setShowSuccess(false); // Reset on error
       }
     }, 600);
   };
 
-  const handleUndo = async () => {
-    try {
-      await onUndoRevision(problem.id);
-    } catch (error) {
-      console.error('Error undoing revision:', error);
-    }
-  };
-
   const getDifficultyColor = (difficulty) => {
     switch(difficulty?.toLowerCase()) {
-      case 'easy': return 'text-green-400 bg-green-400/10 border border-green-400/30';
-      case 'medium': return 'text-yellow-400 bg-yellow-400/10 border border-yellow-400/30';
-      case 'hard': return 'text-red-400 bg-red-400/10 border border-red-400/30';
-      default: return 'text-slate-400 bg-slate-400/10 border border-slate-400/30';
+      case 'easy': return 'text-green-400 bg-green-400/10 border-green-400/30';
+      case 'medium': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30';
+      case 'hard': return 'text-red-400 bg-red-400/10 border-red-400/30';
+      default: return 'text-slate-400 bg-slate-400/10 border-slate-400/30';
     }
   };
 
@@ -104,11 +87,6 @@ const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              {isRevision && (
-                <span className="px-2 py-1 rounded-md text-xs font-medium text-purple-400 bg-purple-400/10 border border-purple-400/30">
-                  Revision
-                </span>
-              )}
               {problem.difficulty && (
                 <span className={`px-2 py-1 rounded-md text-xs font-medium ${getDifficultyColor(problem.difficulty)}`}>
                   {problem.difficulty}
@@ -144,18 +122,6 @@ const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
           </div>
           
           <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 ml-3">
-            {canUndo && !showSuccess && (
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleUndo} 
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors duration-200 hover:bg-orange-500/20 hover:text-orange-400" 
-                title="Undo this revision"
-                type="button"
-              >
-                <FiUndo />
-              </motion.button>
-            )}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -216,32 +182,47 @@ const RevisionItem = ({ problem, onSolve, onUndoRevision }) => {
 };
 
 // --- Main Component ---
-export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision }) {
-  // Get today's date at midnight for accurate comparison
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+export default function RevisionList({ problems, onMarkAsSolved }) {
+  const dueProblemsByCategory = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  // Find all revisions made today
-  const todaysRevisions = problems.filter(p => 
-    p.isRevision &&
-    p.date &&
-    p.date.toDate().setHours(0, 0, 0, 0) === today.getTime()
-  );
+    const categories = { ...Object.fromEntries(INTERVALS.map(i => [i.label, []])) };
 
-  // Get the IDs of original problems that have been revised today
-  const revisedTodayIds = new Set(todaysRevisions.map(p => p.originalProblemId));
+    for (const problem of problems) {
+        // Determine the correct interval for the *next* revision based on solveCount
+        const intervalIndex = problem.solveCount; // solveCount: 0 -> index 0 (1 Day), solveCount: 1 -> index 1 (3 Days), etc.
+        
+        if (intervalIndex < INTERVALS.length) {
+            const interval = INTERVALS[intervalIndex];
+            
+            // For the very first solve (count is 0), the due date is based on when it was CREATED.
+            // For all subsequent solves, it's based on the last SOLVED date.
+            const baseDate = problem.solveCount === 0 ? problem.createdAt.toDate() : problem.date.toDate();
+            
+            const dueDate = new Date(baseDate);
+            dueDate.setDate(dueDate.getDate() + interval.days);
+            dueDate.setHours(0, 0, 0, 0);
 
-  // Only show original (non-revision) problems that are due AND have not been revised today
-  const dueProblems = INTERVALS.map(interval => ({
-    ...interval,
-    problems: problems.filter(p => 
-      !p.isRevision && // Only originals!
-      isDue(p, interval) && // Check if it's due
-      !revisedTodayIds.has(p.id) // Check it hasn't been revised today
-    ),
-  })).filter(group => group.problems.length > 0);
+            // If today is on or after the calculated due date, the problem is due for this interval.
+            if (today >= dueDate) {
+                categories[interval.label].push(problem);
+            }
+        }
+    }
 
-  const totalDue = dueProblems.reduce((sum, group) => sum + group.problems.length, 0);
+    // Filter out empty groups and sort them by the interval days
+    return Object.entries(categories)
+      .map(([label, problems]) => ({ label, problems }))
+      .filter(group => group.problems.length > 0)
+      .sort((a, b) => {
+          const daysA = INTERVALS.find(i => i.label === a.label).days;
+          const daysB = INTERVALS.find(i => i.label === b.label).days;
+          return daysA - daysB;
+      });
+  }, [problems]);
+
+  const totalDue = dueProblemsByCategory.reduce((sum, group) => sum + group.problems.length, 0);
 
   return (
     <div className="space-y-6">
@@ -290,7 +271,7 @@ export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision 
       ) : (
         <div className="space-y-8">
           <AnimatePresence mode="popLayout">
-            {dueProblems.map(({ label, problems: dueItems, color = 'cyan' }) => (
+            {dueProblemsByCategory.map(({ label, problems: dueItems }) => (
               <motion.div 
                 key={label}
                 layout
@@ -323,7 +304,6 @@ export default function RevisionList({ problems, onMarkAsSolved, onUndoRevision 
                         key={problem.id} 
                         problem={problem} 
                         onSolve={onMarkAsSolved}
-                        onUndoRevision={onUndoRevision}
                       />
                     ))}
                   </AnimatePresence>
