@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { logOut } from '../components/Auth.jsx';
 import ProblemForm from './ProblemForm.jsx';
 import RevisionList from './RevisionList.jsx';
-import AllProblemsList from './AllProblemsList.jsx';
-import AllProblemsTable from './AllProblemsTable.jsx'; // Import the new component
+import AllProblemsTable from './AllProblemsTable.jsx';
 import { useProblems } from '../hooks/useProblems.js';
 
 // --- Header Component (no changes) ---
@@ -40,7 +39,7 @@ const Header = ({ user }) => (
     </header>
   );
 
-// --- View Toggle Component (updated) ---
+// --- View Toggle Component (Updated: Removed 'All Problems') ---
 const ViewToggleButton = ({ view, setView }) => (
     <div className="flex justify-center mb-6">
       <motion.div
@@ -65,23 +64,9 @@ const ViewToggleButton = ({ view, setView }) => (
           )}
           Schedule
         </button>
-        <button
-          onClick={() => setView('all')}
-          className={`relative w-32 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
-            view === 'all'
-              ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/25'
-              : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-300'
-          }`}
-        >
-          {view === 'all' && (
-            <motion.div
-              layoutId="activeTab"
-              className="absolute inset-0 bg-cyan-500 rounded-full"
-              style={{ zIndex: -1 }}
-            />
-          )}
-          All Problems
-        </button>
+        
+        {/* Removed 'All Problems' button here */}
+
         <button
           onClick={() => setView('table')}
           className={`relative w-32 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
@@ -145,7 +130,7 @@ const LoadingSpinner = () => (
     </motion.div>
   );
 
-// --- Main App Component (updated) ---
+// --- Main App Component (Updated) ---
 export default function RevisionApp({ user }) {
   const {
     problems,
@@ -173,15 +158,7 @@ export default function RevisionApp({ user }) {
             onMarkAsSolved={markAsSolved}
           />
         );
-      case 'all':
-        return (
-          <AllProblemsList
-            problems={problems}
-            onBack={() => setView('revision')}
-            onDeleteProblem={deleteProblem}
-            onMarkAsSolved={markAsSolved}
-          />
-        );
+      // Case 'all' removed
       case 'table':
         return <AllProblemsTable problems={problems} />;
       default:

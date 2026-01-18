@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { INTERVALS } from './constants';
+import { INTERVALS } from './constants'; // Make sure this import is present
 
 // --- SVG Icon Components ---
 const FiCheck = () => (
@@ -16,22 +16,27 @@ const CheckCircle = () => (
 );
 
 // --- Sub-components ---
-const SolveTracker = ({ count }) => (
-  <div className="flex items-center gap-1">
-    <span className="text-xs text-slate-500 mr-1">Progress:</span>
-    {[...Array(5)].map((_, i) => (
-      <div
-        key={i}
-        className={`h-2 w-2 rounded-full transition-all duration-300 ${
-          i < (count || 0) 
-            ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm' 
-            : 'bg-slate-600'
-        }`}
-      />
-    ))}
-    <span className="text-xs text-slate-500 ml-1">{count || 0}/5</span>
-  </div>
-);
+const SolveTracker = ({ count }) => {
+  // Use the length of the INTERVALS array instead of a hardcoded number
+  const totalSteps = INTERVALS.length;
+
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-xs text-slate-500 mr-1">Progress:</span>
+      {[...Array(totalSteps)].map((_, i) => (
+        <div
+          key={i}
+          className={`h-2 w-2 rounded-full transition-all duration-300 ${
+            i < (count || 0) 
+              ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm' 
+              : 'bg-slate-600'
+          }`}
+        />
+      ))}
+      <span className="text-xs text-slate-500 ml-1">{count || 0}/{totalSteps}</span>
+    </div>
+  );
+};
 
 const RevisionItem = ({ problem, onSolve }) => {
   const [isSolving, setIsSolving] = useState(false);
@@ -191,7 +196,7 @@ export default function RevisionList({ problems, onMarkAsSolved }) {
 
     for (const problem of problems) {
         // Determine the correct interval for the *next* revision based on solveCount
-        const intervalIndex = problem.solveCount; // solveCount: 0 -> index 0 (1 Day), solveCount: 1 -> index 1 (3 Days), etc.
+        const intervalIndex = problem.solveCount; 
         
         if (intervalIndex < INTERVALS.length) {
             const interval = INTERVALS[intervalIndex];

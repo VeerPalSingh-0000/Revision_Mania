@@ -1,5 +1,8 @@
+// src/Revision/RevisionItem.jsx
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { INTERVALS } from './constants'; // <--- Added import
 
 // --- SVG Icons (no changes) ---
 const FiTrash = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
@@ -9,7 +12,8 @@ const FiUndo = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="
 const SolveTracker = ({ count }) => (
   <div className="flex items-center gap-1.5" title={`${count || 0} solves`}>
     <span className="text-xs text-slate-400 mr-1">Progress:</span>
-    {[...Array(4)].map((_, i) => (
+    {/* UPDATED: Uses INTERVALS.length */}
+    {[...Array(INTERVALS.length)].map((_, i) => (
       <div
         key={i}
         className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${
@@ -19,7 +23,7 @@ const SolveTracker = ({ count }) => (
         }`}
       />
     ))}
-    <span className="text-xs text-slate-400 ml-2">{count || 0}/4</span>
+    <span className="text-xs text-slate-400 ml-2">{count || 0}/{INTERVALS.length}</span>
   </div>
 );
 
