@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { subscribeAuth } from "./components/Auth.jsx";
 import { ToastProvider, useToast } from "./components/Toast.jsx";
@@ -20,6 +20,9 @@ function AppContent() {
 
   useEffect(() => {
     const unsubscribe = subscribeAuth(async (currentUser) => {
+      setUser(currentUser);
+      setIsLoading(false);
+      
       if (currentUser) {
         // Check if it's a new user for onboarding
         const userDocRef = doc(db, 'users', currentUser.uid);
@@ -32,10 +35,8 @@ function AppContent() {
         } else if (userDoc.data().onboarded === false) {
           setShowOnboarding(true);
         }
-        addToast(`Welcome back, ${currentUser.displayName || currentUser.email}!`, 'success');
+        addToast(`Welcome back, ${currentUser.displayName || currentUser.email || 'User'}!`, 'success');
       }
-      setUser(currentUser);
-      setIsLoading(false);
     });
     return () => unsubscribe();
   }, [addToast]);

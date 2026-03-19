@@ -255,13 +255,32 @@ const AllProblemsTable = ({
                     {formatDate(problem.createdAt)}
                   </td>
                   {intervals.map((interval, i) => {
-                    const isCompleted = (problem.solveCount || 0) > i;
+                    const solveCount = problem.solveCount || 0;
+                    const isCompleted = solveCount > i;
                     const solveDates = problem.solveDates || [];
-                    const solveDate = solveDates[i];
-                    const formattedDate = solveDate
-                      ? (solveDate.toDate
-                          ? solveDate.toDate()
-                          : new Date(solveDate)
+                    
+                    const offset = solveCount - solveDates.length;
+                    const dateIndex = i - offset;
+                    
+                    // Start with the actual date if it exists
+                    let actualDate = dateIndex >= 0 ? solveDates[dateIndex] : null;
+
+                    // ✨ THE NEW MAGIC: If it's completed but missing a date, calculate it!
+                    if (isCompleted && !actualDate && problem.createdAt) {
+                       const createdDate = problem.createdAt.toDate 
+                          ? problem.createdAt.toDate() 
+                          : new Date(problem.createdAt);
+                       
+                       // Add the interval days to the creation date
+                       const estimatedDate = new Date(createdDate);
+                       estimatedDate.setDate(estimatedDate.getDate() + interval.days);
+                       actualDate = estimatedDate;
+                    }
+
+                    const formattedDate = actualDate
+                      ? (actualDate.toDate
+                          ? actualDate.toDate()
+                          : new Date(actualDate)
                         ).toLocaleDateString("en-GB", {
                           day: "2-digit",
                           month: "short",

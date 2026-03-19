@@ -236,7 +236,7 @@ export default function ProblemDetailsModal({
   };
   const handleSolveAgain = () => {
     if (typeof onMarkAsSolved === "function") {
-      onMarkAsSolved(problem.id);
+      onMarkAsSolved(problem.id, problem.solveCount || 0);
       onClose();
     }
   };
@@ -328,6 +328,7 @@ export default function ProblemDetailsModal({
                   count={problem.solveCount}
                   solveDates={problem.solveDates}
                   intervals={intervals}
+                  createdAt={problem.createdAt}
                   size="lg"
                   showFullLabel
                 />

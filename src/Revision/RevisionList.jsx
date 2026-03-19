@@ -47,7 +47,7 @@ const RevisionItem = ({ problem, onSolve, onClickProblem, intervals }) => {
     // Short delay to show feedback before the item disappears
     setTimeout(async () => {
       try {
-        await onSolve(problem.id);
+        await onSolve(problem.id, problem.solveCount || 0);
       } catch (error) {
         console.error("Error solving problem:", error);
         setShowSuccess(false); // Reset on error
@@ -142,6 +142,7 @@ const RevisionItem = ({ problem, onSolve, onClickProblem, intervals }) => {
               count={problem.solveCount}
               solveDates={problem.solveDates}
               intervals={intervals}
+              createdAt={problem.createdAt}
             />
           </div>
 

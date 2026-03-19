@@ -102,7 +102,7 @@ export default function RevisionItem({
 
   const handleSolveClick = (e) => {
     e.stopPropagation();
-    if (typeof onSolve === "function") onSolve(problem.id, solveCount, true);
+    if (typeof onSolve === "function") onSolve(problem.id, solveCount);
   };
 
   const handleUndoClick = (e) => {
@@ -239,6 +239,7 @@ export default function RevisionItem({
               count={solveCount}
               solveDates={problem.solveDates}
               intervals={intervals}
+              createdAt={problem.createdAt}
             />
           </div>
           {tags.length > 0 && (

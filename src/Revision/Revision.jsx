@@ -9,7 +9,7 @@ import { useSettings } from "../hooks/useSettings.js";
 import SettingsModal from "./SettingsModal.jsx";
 
 // --- Header Component ---
-const Header = ({ user, onOpenSettings }) => (
+const Header = ({ user, onOpenSettings, updateToSequentialLabels }) => (
   <header className="mb-8 flex items-center justify-between">
     <div>
       <motion.h1
@@ -32,6 +32,38 @@ const Header = ({ user, onOpenSettings }) => (
       </motion.p>
     </div>
     <div className="flex items-center gap-2">
+      <motion.button
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={async () => {
+          const result = await updateToSequentialLabels();
+          if (result.success) {
+            alert('Interval labels updated successfully!');
+          } else {
+            alert('Failed to update labels: ' + result.error);
+          }
+        }}
+        className="p-2 rounded-lg bg-emerald-800 text-emerald-400 hover:text-emerald-300 border border-emerald-700 hover:border-emerald-600 transition-all duration-200"
+        title="Update to Sequential Labels"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path>
+          <path d="M2 12l10 5 10-5"></path>
+        </svg>
+      </motion.button>
       <motion.button
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -180,6 +212,7 @@ export default function RevisionApp({ user }) {
     intervals,
     updateIntervals,
     resetToDefaults,
+    updateToSequentialLabels,
     isLoading: isSettingsLoading,
   } = useSettings(user);
 
@@ -234,7 +267,7 @@ export default function RevisionApp({ user }) {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="relative z-10 w-full max-w-4xl mx-auto"
         >
-          <Header user={user} onOpenSettings={() => setIsSettingsOpen(true)} />
+          <Header user={user} onOpenSettings={() => setIsSettingsOpen(true)} updateToSequentialLabels={updateToSequentialLabels} />
 
           <motion.main
             initial={{ opacity: 0, y: 20 }}

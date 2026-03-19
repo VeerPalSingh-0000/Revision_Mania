@@ -18,20 +18,13 @@ const getShortLabel = (label) => {
   return label;
 };
 
-/**
- * Shared SolveTracker component.
- * @param {number} count - Number of completed solves.
- * @param {Array} solveDates - Array of Firestore Timestamps for each solve.
- * @param {Array} intervals - Optional custom intervals array.
- * @param {"sm"|"md"|"lg"} size - Dot size variant.
- * @param {boolean} showFullLabel - Show full label instead of abbreviation.
- */
 export default function SolveTracker({
   count,
   solveDates = [],
   intervals = INTERVALS,
   size = "md",
   showFullLabel = false,
+  createdAt = null, // ✨ NEW: Now it accepts the creation date!
 }) {
   const totalSteps = intervals.length;
 
@@ -45,7 +38,25 @@ export default function SolveTracker({
     <div className="flex items-center gap-3">
       {[...Array(totalSteps)].map((_, i) => {
         const isCompleted = i < (count || 0);
-        const solveDate = solveDates[i] ? formatDate(solveDates[i]) : null;
+        const actualDates = solveDates || [];
+        
+        const offset = (count || 0) - actualDates.length;
+        const dateIndex = i - offset;
+        
+        let actualDate = dateIndex >= 0 ? actualDates[dateIndex] : null;
+
+        // ✨ THE MAGIC: Calculate missing dates just like the table
+        if (isCompleted && !actualDate && createdAt) {
+           const createdDate = createdAt.toDate 
+              ? createdAt.toDate() 
+              : new Date(createdAt);
+           
+           const estimatedDate = new Date(createdDate);
+           estimatedDate.setDate(estimatedDate.getDate() + intervals[i].days);
+           actualDate = estimatedDate;
+        }
+
+        const solveDate = actualDate ? formatDate(actualDate) : null;
 
         return (
           <div key={i} className="flex flex-col items-center gap-0.5">

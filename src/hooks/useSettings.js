@@ -59,10 +59,39 @@ export function useSettings(user) {
     return await updateIntervals(INTERVALS);
   }, [updateIntervals]);
 
+  const updateToSequentialLabels = useCallback(async () => {
+    if (!user) return { success: false, error: "Not authenticated" };
+    try {
+      // Get current intervals and update their labels to sequential format
+      const currentIntervals = settings.intervals || INTERVALS;
+      const updatedIntervals = currentIntervals.map((interval, index) => {
+        let timeLabel = '';
+        if (interval.days === 3) timeLabel = '3 Days';
+        else if (interval.days === 7) timeLabel = '1 Week';
+        else if (interval.days === 30) timeLabel = '1 Month';
+        else if (interval.days === 90) timeLabel = '3 Months';
+        else timeLabel = `${interval.days} Days`;
+        
+        return {
+          ...interval,
+          label: `Rev ${index + 1} (${timeLabel})`
+        };
+      });
+      
+      const settingsRef = doc(db, "userSettings", user.uid);
+      await setDoc(settingsRef, { intervals: updatedIntervals }, { merge: true });
+      return { success: true };
+    } catch (err) {
+      console.error("Error updating to sequential labels:", err);
+      return { success: false, error: "Failed to update labels." };
+    }
+  }, [user, settings.intervals]);
+
   return {
     intervals: settings.intervals || INTERVALS,
     isLoading,
     updateIntervals,
     resetToDefaults,
+    updateToSequentialLabels,
   };
 }

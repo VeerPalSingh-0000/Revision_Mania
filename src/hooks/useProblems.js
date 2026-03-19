@@ -16,6 +16,7 @@ import {
   arrayUnion,
   onSnapshot,
   getDocs,
+  getDoc,
   limit,
 } from "firebase/firestore";
 
@@ -65,14 +66,28 @@ export function useProblems(user) {
     return () => unsubscribe();
   }, [user]);
 
-  const markAsSolved = useCallback(async (problemId) => {
+  const markAsSolved = useCallback(async (problemId, currentSolveCount = 0) => {
     try {
       const problemRef = doc(db, "problems", problemId);
       const now = Timestamp.fromDate(new Date());
+      
+      // Get current problem data to access existing solveDates
+      const problemDoc = await getDoc(problemRef);
+      const currentData = problemDoc.data();
+      const solveDates = currentData.solveDates || [];
+      
+      // Ensure the array has enough elements
+      while (solveDates.length <= currentSolveCount) {
+        solveDates.push(null);
+      }
+      
+      // Store the date at the correct index corresponding to the solve count
+      solveDates[currentSolveCount] = now;
+      
       await updateDoc(problemRef, {
         solveCount: increment(1),
         date: now, // Reset the revision date
-        solveDates: arrayUnion(now), // Track each individual solve date
+        solveDates: solveDates,
       });
       return { success: true };
     } catch (err) {
@@ -106,7 +121,8 @@ export function useProblems(user) {
         if (!querySnapshot.empty) {
           // If it exists, just mark it as solved (which increments the count)
           const existingProblemDoc = querySnapshot.docs[0];
-          await markAsSolved(existingProblemDoc.id);
+          const existingData = existingProblemDoc.data();
+          await markAsSolved(existingProblemDoc.id, existingData.solveCount || 0);
           return { success: true, updated: true };
         } else {
           // If it's a completely new problem, add it with a solveCount of 0
