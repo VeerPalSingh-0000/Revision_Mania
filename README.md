@@ -36,7 +36,7 @@ Instead of forgetting the logic to a tough Data Structures & Algorithms (DSA) pr
 ## 📸 Sneak Peek
 
 <div align="center">
-  <img src="./public/Revision%20Mania1.png" alt="App Demo" width="800" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);"/>
+  <img src="./doc/demo.gif" alt="App Demo" width="800" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);"/>
 </div>
 
 ---
