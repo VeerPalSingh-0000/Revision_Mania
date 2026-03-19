@@ -72,7 +72,7 @@ Make sure you have Node.js and npm installed on your machine.
 
 1. **Clone the repo**
    ```sh
-   git clone https://github.com/veerpalsingh/revision_mania.git
+   git clone https://github.com/VeerPalSingh-0000/revision_mania.git
    ```
 
 2. **Navigate to the directory**
@@ -151,7 +151,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 <div align="center">
 <p>Built with ❤️ by <b>Veer Pal Singh</b></p>
 <p>
-<a href="https://github.com/veerpalsingh">GitHub</a> •
-<a href="https://www.linkedin.com/in/veerpalsingh">LinkedIn</a>
+<a href="https://github.com/VeerPalSingh-0000">GitHub</a> •
+<a href="https://www.linkedin.com/in/veer-pal-singh-865245313">LinkedIn</a>
 </p>
 </div>
