@@ -1,5 +1,8 @@
 <div align="center">
-  <img src="./public/Logo.png" alt="Revision Mania Banner" width="100%" />
+  <img src="./public/Logo.png" alt="Revision Mania Logo" width="200" />
+  <h1>Revision Mania</h1>
+  <p><i>Smart Revision for Continuous Learning</i></p>
+</div>
 
   # 🚀 Revision Mania
 
@@ -36,7 +39,7 @@ Instead of forgetting the logic to a tough Data Structures & Algorithms (DSA) pr
 ## 📸 Sneak Peek
 
 <div align="center">
-  <video src="./docs/demo.mp4" alt="Revision Mania App Demo" width="800" controls autoplay loop muted style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);"/>
+  <img src="./docs/demo.gif" alt="Revision Mania App Demo GIF" width="800" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);"/>
 </div>
 
 ---
