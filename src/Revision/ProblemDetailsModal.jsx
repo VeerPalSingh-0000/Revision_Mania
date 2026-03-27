@@ -323,7 +323,9 @@ export default function ProblemDetailsModal({
               <FiTrendingUp />
             </div>
             <div className="flex-1 w-full min-w-0 flex flex-col items-center sm:items-start text-center sm:text-left">
-              <p className="text-sm text-slate-400 mb-2 sm:mb-0 w-full text-left font-semibold sm:font-normal">Solve Progress</p>
+              <p className="text-sm text-slate-400 mb-2 sm:mb-0 w-full text-left font-semibold sm:font-normal">
+                Solve Progress
+              </p>
               <div className="mt-2 text-center sm:text-left mx-auto sm:mx-0 w-full overflow-x-auto custom-scrollbar pb-1">
                 <SolveTracker
                   count={problem.solveCount}

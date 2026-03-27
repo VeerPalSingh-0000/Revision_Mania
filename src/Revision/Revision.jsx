@@ -40,9 +40,9 @@ const Header = ({ user, onOpenSettings, updateToSequentialLabels }) => (
         onClick={async () => {
           const result = await updateToSequentialLabels();
           if (result.success) {
-            alert('Interval labels updated successfully!');
+            alert("Interval labels updated successfully!");
           } else {
-            alert('Failed to update labels: ' + result.error);
+            alert("Failed to update labels: " + result.error);
           }
         }}
         className="p-2 rounded-lg bg-emerald-800 text-emerald-400 hover:text-emerald-300 border border-emerald-700 hover:border-emerald-600 transition-all duration-200"
@@ -104,11 +104,11 @@ const Header = ({ user, onOpenSettings, updateToSequentialLabels }) => (
 
 // --- View Toggle Component (Updated: Removed 'All Problems') ---
 const ViewToggleButton = ({ view, setView }) => (
-  <div className="flex justify-center mb-6 mt-10">
+  <div className="flex justify-center">
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center rounded-full bg-slate-800/80 p-1 border border-slate-700/50"
+      className="flex items-center rounded-full bg-slate-800/90 backdrop-blur-md p-1 border border-slate-700/50 shadow-lg shadow-slate-950/50"
     >
       <button
         onClick={() => setView("revision")}
@@ -254,7 +254,7 @@ export default function RevisionApp({ user }) {
 
   return (
     <>
-      <div className="relative flex min-h-screen flex-col items-start justify-start overflow-hidden bg-slate-950 p-4 font-sans text-slate-200 sm:p-6 md:p-8">
+      <div className="relative flex min-h-screen flex-col items-start justify-start overflow-clip bg-slate-950 p-4 font-sans text-slate-200 sm:p-6 md:p-8">
         {/* Background Pattern */}
         <div className="absolute inset-0 z-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-30"></div>
 
@@ -267,7 +267,11 @@ export default function RevisionApp({ user }) {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="relative z-10 w-full max-w-4xl mx-auto"
         >
-          <Header user={user} onOpenSettings={() => setIsSettingsOpen(true)} updateToSequentialLabels={updateToSequentialLabels} />
+          <Header
+            user={user}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            updateToSequentialLabels={updateToSequentialLabels}
+          />
 
           <motion.main
             initial={{ opacity: 0, y: 20 }}
@@ -318,6 +322,7 @@ export default function RevisionApp({ user }) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
+              className="sticky top-2 sm:top-4 z-[60] mt-10 mb-6 py-2 mx-auto w-max"
             >
               <ViewToggleButton view={view} setView={setView} />
             </motion.div>

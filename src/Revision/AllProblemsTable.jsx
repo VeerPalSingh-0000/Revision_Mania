@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ProblemDetailsModal from "./ProblemDetailsModal";
 
 const AllProblemsTable = ({
-  problems,
+  problems, 
   onMarkAsSolved,
   onUpdateNotes,
   intervals,
