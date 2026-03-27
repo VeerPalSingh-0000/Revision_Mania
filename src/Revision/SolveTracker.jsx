@@ -26,7 +26,7 @@ export default function SolveTracker({
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
       {[...Array(totalSteps)].map((_, i) => {
         const isCompleted = i < (count || 0);
 
@@ -40,7 +40,7 @@ export default function SolveTracker({
                     : "bg-slate-600"
                 }`}
               />
-              <span className="text-[9px] text-slate-500 leading-tight">
+              <span className="text-[9px] text-slate-500 leading-tight whitespace-nowrap">
                 {showFullLabel
                   ? intervals[i].label
                   : getShortLabel(intervals[i].label)}
@@ -49,7 +49,7 @@ export default function SolveTracker({
           </div>
         );
       })}
-      <span className="text-xs text-slate-400 ml-1">
+      <span className="text-xs text-slate-400 ml-1 whitespace-nowrap">
         {count || 0}/{totalSteps}
       </span>
     </div>

@@ -193,6 +193,6 @@ export default function SettingsModal({ intervals, onSave, onReset, onClose }) {
         </div>
       </motion.div>
     </motion.div>,
-    document.body
+    document.body,
   );
 }

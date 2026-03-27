@@ -269,18 +269,18 @@ export default function ProblemDetailsModal({
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.95, y: 20, opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="relative w-full overflow-y-auto bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700/60 shadow-2xl max-w-2xl h-auto max-h-[95vh] p-6 pb-24 sm:pb-6"
+        className="relative w-full overflow-y-auto bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700/60 shadow-2xl max-w-2xl h-auto max-h-[95vh] p-4 sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-700/40 hover:text-slate-100"
+          className="absolute top-2 right-2 sm:top-4 sm:right-4 flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-700/40 hover:text-slate-100"
         >
           <FiX />
         </button>
 
-        <div className="pr-10 mb-6">
+        <div className="pr-8 sm:pr-10 mb-6 mt-2">
           {isRevision && (
             <div className="mb-3 flex items-center gap-3">
               <span className="px-3 py-1 rounded-full text-xs font-semibold text-purple-300 bg-purple-400/10 border border-purple-400/20 inline-flex items-center gap-2">
@@ -288,7 +288,7 @@ export default function ProblemDetailsModal({
               </span>
             </div>
           )}
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-100 leading-tight mb-3 break-words">
+          <h2 className="text-lg sm:text-2xl font-bold text-slate-100 leading-tight mb-3 break-words">
             {isLink ? (
               <a
                 href={problem.problem}
@@ -318,13 +318,13 @@ export default function ProblemDetailsModal({
         </div>
 
         {!isRevision && (
-          <div className="mb-4 p-3 rounded-xl bg-slate-700/30 border border-slate-600/30 flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-300">
+          <div className="mb-4 p-3 sm:p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="hidden sm:flex flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-300">
               <FiTrendingUp />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-slate-400">Solve Progress</p>
-              <div className="mt-2">
+            <div className="flex-1 w-full min-w-0 flex flex-col items-center sm:items-start text-center sm:text-left">
+              <p className="text-sm text-slate-400 mb-2 sm:mb-0 w-full text-left font-semibold sm:font-normal">Solve Progress</p>
+              <div className="mt-2 text-center sm:text-left mx-auto sm:mx-0 w-full overflow-x-auto custom-scrollbar pb-1">
                 <SolveTracker
                   count={problem.solveCount}
                   solveDates={problem.solveDates}
@@ -347,9 +347,9 @@ export default function ProblemDetailsModal({
               <p className="text-sm text-slate-400">
                 {isRevision ? "Solved On" : "Last Solved"}
               </p>
-              <p className="font-medium text-slate-200">
+              <p className="font-medium text-slate-200 text-sm sm:text-base">
                 {formatDate(lastSolved)}
-                <span className="text-sm text-slate-400 ml-2">
+                <span className="text-xs sm:text-sm text-slate-400 sm:ml-2 block sm:inline mt-0.5 sm:mt-0">
                   at {formatTime(lastSolved)}
                 </span>
               </p>
@@ -362,7 +362,7 @@ export default function ProblemDetailsModal({
               </div>
               <div>
                 <p className="text-sm text-slate-400">Next Revision Due</p>
-                <p className="font-medium text-slate-200">
+                <p className="font-medium text-slate-200 text-sm sm:text-base">
                   {formatDate(nextDueDate)}
                 </p>
                 <p
