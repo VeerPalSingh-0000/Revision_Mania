@@ -163,8 +163,9 @@ const DifficultyBadge = ({ difficulty }) => {
   );
 };
 function getNextDueDate(lastSolvedDate, solveCount, intervals = INTERVALS) {
-  const nextInterval =
-    intervals[solveCount - 1] || intervals[intervals.length - 1];
+  const intervalIndex =
+    solveCount >= intervals.length ? intervals.length - 1 : solveCount;
+  const nextInterval = intervals[intervalIndex];
   const nextDate = new Date(lastSolvedDate.getTime());
   nextDate.setDate(nextDate.getDate() + nextInterval.days);
   return nextDate;

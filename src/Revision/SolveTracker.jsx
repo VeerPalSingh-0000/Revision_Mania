@@ -1,15 +1,6 @@
 import React from "react";
 import { INTERVALS } from "./constants";
 
-const formatDate = (timestamp) => {
-  if (!timestamp) return null;
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-  });
-};
-
 const getShortLabel = (label) => {
   if (label === "3 Days") return "3D";
   if (label === "1 Week") return "1W";
@@ -38,25 +29,6 @@ export default function SolveTracker({
     <div className="flex items-center gap-3">
       {[...Array(totalSteps)].map((_, i) => {
         const isCompleted = i < (count || 0);
-        const actualDates = solveDates || [];
-        
-        const offset = (count || 0) - actualDates.length;
-        const dateIndex = i - offset;
-        
-        let actualDate = dateIndex >= 0 ? actualDates[dateIndex] : null;
-
-        // ✨ THE MAGIC: Calculate missing dates just like the table
-        if (isCompleted && !actualDate && createdAt) {
-           const createdDate = createdAt.toDate 
-              ? createdAt.toDate() 
-              : new Date(createdAt);
-           
-           const estimatedDate = new Date(createdDate);
-           estimatedDate.setDate(estimatedDate.getDate() + intervals[i].days);
-           actualDate = estimatedDate;
-        }
-
-        const solveDate = actualDate ? formatDate(actualDate) : null;
 
         return (
           <div key={i} className="flex flex-col items-center gap-0.5">
@@ -74,11 +46,6 @@ export default function SolveTracker({
                   : getShortLabel(intervals[i].label)}
               </span>
             </div>
-            {isCompleted && solveDate && (
-              <span className="text-[8px] text-emerald-400/70 leading-tight">
-                {solveDate}
-              </span>
-            )}
           </div>
         );
       })}
