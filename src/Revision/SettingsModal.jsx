@@ -1,5 +1,6 @@
 // src/Revision/SettingsModal.jsx
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 
 const FiX = () => (
@@ -59,16 +60,6 @@ export default function SettingsModal({ intervals, onSave, onReset, onClose }) {
   const [localIntervals, setLocalIntervals] = useState([...intervals]);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    // Prevent background scrolling while modal is open
-    const originalStyle = window.getComputedStyle(document.body).overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = originalStyle;
-    };
-  }, []);
-
   const handleAdd = () => {
     setLocalIntervals([...localIntervals, { label: "New Step", days: 1 }]);
   };
@@ -100,12 +91,12 @@ export default function SettingsModal({ intervals, onSave, onReset, onClose }) {
     }
   };
 
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <motion.div
@@ -201,6 +192,7 @@ export default function SettingsModal({ intervals, onSave, onReset, onClose }) {
           </button>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }

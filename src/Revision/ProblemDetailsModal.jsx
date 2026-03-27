@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { INTERVALS } from "./constants";
 import SolveTracker from "./SolveTracker";
@@ -193,21 +194,11 @@ export default function ProblemDetailsModal({
   const [notesValue, setNotesValue] = useState(problem.notes || "");
 
   useEffect(() => {
-    containerRef.current?.focus({ preventScroll: true });
-
-    // Prevent background scrolling while modal is open
-    const originalStyle = window.getComputedStyle(document.body).overflow;
-    document.body.style.overflow = "hidden";
-
     const handleKey = (e) => {
       if (e.key === "Escape") onClose?.();
     };
     document.addEventListener("keydown", handleKey);
-
-    return () => {
-      document.body.style.overflow = originalStyle;
-      document.removeEventListener("keydown", handleKey);
-    };
+    return () => document.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
   const handleNotesSave = () => {
@@ -261,12 +252,12 @@ export default function ProblemDetailsModal({
     return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
   })();
 
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -449,6 +440,7 @@ export default function ProblemDetailsModal({
           )}
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }
