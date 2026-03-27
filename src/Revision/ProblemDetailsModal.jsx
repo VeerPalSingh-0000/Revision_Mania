@@ -193,12 +193,21 @@ export default function ProblemDetailsModal({
   const [notesValue, setNotesValue] = useState(problem.notes || "");
 
   useEffect(() => {
-    containerRef.current?.focus();
+    containerRef.current?.focus({ preventScroll: true });
+
+    // Prevent background scrolling while modal is open
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = "hidden";
+
     const handleKey = (e) => {
       if (e.key === "Escape") onClose?.();
     };
     document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
+
+    return () => {
+      document.body.style.overflow = originalStyle;
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [onClose]);
 
   const handleNotesSave = () => {

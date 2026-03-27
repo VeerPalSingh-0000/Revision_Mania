@@ -1,5 +1,5 @@
 // src/Revision/SettingsModal.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 const FiX = () => (
@@ -58,6 +58,16 @@ const FiTrash2 = () => (
 export default function SettingsModal({ intervals, onSave, onReset, onClose }) {
   const [localIntervals, setLocalIntervals] = useState([...intervals]);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    // Prevent background scrolling while modal is open
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
 
   const handleAdd = () => {
     setLocalIntervals([...localIntervals, { label: "New Step", days: 1 }]);
