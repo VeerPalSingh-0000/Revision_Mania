@@ -18,6 +18,7 @@ import {
   getDocs,
   getDoc,
   limit,
+  writeBatch,
 } from "firebase/firestore";
 
 /**
@@ -172,6 +173,28 @@ export function useProblems(user) {
     }
   }, []);
 
+  const clearAllProblems = useCallback(async () => {
+    if (!user) return { success: false, error: "Not authenticated" };
+    try {
+      const q = query(collection(db, "problems"), where("uid", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        return { success: true };
+      }
+
+      const batch = writeBatch(db);
+      querySnapshot.docs.forEach((docSnap) => {
+        batch.delete(docSnap.ref);
+      });
+      await batch.commit();
+      return { success: true };
+    } catch (err) {
+      console.error("Error clearing problems:", err);
+      return { success: false, error: err.message || err.toString() };
+    }
+  }, [user]);
+
   return {
     problems,
     isLoading,
@@ -180,6 +203,7 @@ export function useProblems(user) {
     deleteProblem,
     markAsSolved,
     updateNotes,
+    clearAllProblems,
     refetch: null,
   };
 }

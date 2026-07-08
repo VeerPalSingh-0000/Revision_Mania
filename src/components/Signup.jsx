@@ -31,7 +31,7 @@ const PasswordStrengthMeter = ({ strength }) => {
     return (<div className="flex items-center gap-3"><div className="h-2 flex-grow rounded-full bg-slate-700"><motion.div initial={{ width: 0 }} animate={{ width: current.width }} transition={{ duration: 0.3 }} className={`h-full rounded-full ${current.color}`}></motion.div></div><span className="w-16 text-right text-xs font-medium text-slate-400">{current.label}</span></div>);
 };
 
-export default function SignUp({ onSwitchToSignIn }) {
+export default function SignUp({ onSwitchToSignIn, onBackToLanding }) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -58,5 +58,46 @@ export default function SignUp({ onSwitchToSignIn }) {
     const handleSubmit = (e) => { e.preventDefault(); handleAction(() => signUp(email, password, { displayName: name })); };
     const handleGoogleSignUp = () => handleAction(signInWithGoogle);
 
-    return (<div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 p-4 font-sans"><div className="absolute inset-0 z-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px]"></div><motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="relative z-10 w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-8 md:p-12"><header className="text-center"><h1 className="mb-2 text-3xl font-bold tracking-tighter text-slate-100 md:text-4xl">Create an Account</h1><p className="text-sm text-slate-400">Join us and start your journey.</p></header><div className="mt-8 space-y-6"><form onSubmit={handleSubmit} className="space-y-6"><FormInput id="name" type="text" placeholder="Full Name" icon={FiUser} value={name} onChange={(e) => setName(e.target.value)} /><FormInput id="email" type="email" placeholder="Email" icon={FiMail} value={email} onChange={(e) => setEmail(e.target.value)} /><FormInput id="password" type="password" placeholder="Password" icon={FiLock} value={password} onChange={(e) => setPassword(e.target.value)} /><PasswordStrengthMeter strength={passwordStrength} /><ActionButton isLoading={isLoading}>Create Account</ActionButton></form><div className="my-4 flex items-center gap-3"><hr className="w-full border-slate-700" /><span className="text-xs font-medium text-slate-500">OR</span><hr className="w-full border-slate-700" /></div><SocialButton onClick={handleGoogleSignUp} disabled={isLoading}>Sign Up with Google</SocialButton><p className="text-center text-sm text-slate-400">Already have an account?{' '}<button onClick={onSwitchToSignIn} className="font-medium text-cyan-400 hover:underline">Sign In</button></p></div></motion.div></div>);
-};
+    return (
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 p-4 font-sans">
+            <div className="absolute inset-0 z-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px]"></div>
+            
+            {/* Back Button */}
+            <button 
+                onClick={onBackToLanding} 
+                className="absolute left-6 top-6 flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors z-20"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Back to Home
+            </button>
+
+            <motion.div 
+                initial={{ opacity: 0, y: 50 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} 
+                className="relative z-10 w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-8 md:p-12"
+            >
+                <header className="text-center">
+                    <h1 className="mb-2 text-3xl font-bold tracking-tighter text-slate-100 md:text-4xl">Create an Account</h1>
+                    <p className="text-sm text-slate-400">Join us and start your journey.</p>
+                </header>
+                <div className="mt-8 space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <FormInput id="name" type="text" placeholder="Full Name" icon={FiUser} value={name} onChange={(e) => setName(e.target.value)} />
+                        <FormInput id="email" type="email" placeholder="Email" icon={FiMail} value={email} onChange={(e) => setEmail(e.target.value)} />
+                        <FormInput id="password" type="password" placeholder="Password" icon={FiLock} value={password} onChange={(e) => setPassword(e.target.value)} />
+                        <PasswordStrengthMeter strength={passwordStrength} />
+                        <ActionButton isLoading={isLoading}>Create Account</ActionButton>
+                    </form>
+                    <div className="my-4 flex items-center gap-3">
+                        <hr className="w-full border-slate-700" />
+                        <span className="text-xs font-medium text-slate-500">OR</span>
+                        <hr className="w-full border-slate-700" />
+                    </div>
+                    <SocialButton onClick={handleGoogleSignUp} disabled={isLoading}>Sign Up with Google</SocialButton>
+                    <p className="text-center text-sm text-slate-400">Already have an account?{' '}<button onClick={onSwitchToSignIn} className="font-medium text-cyan-400 hover:underline">Sign In</button></p>
+                </div>
+            </motion.div>
+        </div>
+    );
+}

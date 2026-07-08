@@ -288,32 +288,20 @@ export default function RevisionList({
         </div>
         {totalDue === 0 ? (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-700/50 p-16 text-center bg-slate-800/20"
+            transition={{ delay: 0.1 }}
+            className="flex flex-col items-center justify-center rounded-xl border border-slate-800/60 bg-slate-900/30 p-8 text-center shadow-sm relative overflow-hidden"
           >
-            <motion.div
-              className="text-6xl mb-4"
-              animate={{
-                rotate: [0, 10, -10, 0],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                repeatDelay: 5,
-                ease: "easeInOut",
-              }}
-            >
+            <div className="w-12 h-12 rounded-full bg-slate-800/40 border border-slate-700/50 flex items-center justify-center text-2xl mb-3 shadow-inner">
               🎉
-            </motion.div>
-            <h3 className="text-xl font-bold text-slate-300 mb-2">
+            </div>
+
+            <h3 className="text-sm font-bold text-slate-200">
               All caught up!
             </h3>
-            <p className="text-slate-500 max-w-md">
-              No problems are due for revision today. Great job staying on top
-              of your practice!
+            <p className="text-[11px] text-slate-400 mt-1 max-w-sm leading-relaxed font-medium">
+              No problems are due for revision today. Keep cataloging new problems or practice by solving ahead!
             </p>
           </motion.div>
         ) : (

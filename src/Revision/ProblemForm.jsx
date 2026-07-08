@@ -94,25 +94,74 @@ const PLATFORM_OPTIONS = [
 
 const COMMON_TAGS = [
   "Array",
-  "String",
-  "Hash Table",
-  "Math",
-  "Dynamic Programming",
-  "Sorting",
-  "Greedy",
-  "Database",
-  "Binary Search",
-  "Tree",
-  "Depth-First Search",
-  "Breadth-First Search",
-  "Two Pointers",
-  "Sliding Window",
-  "Stack",
-  "Queue",
-  "Heap",
-  "Graph",
   "Backtracking",
+  "Biconnected Component",
+  "Binary Indexed Tree",
+  "Binary Search",
+  "Binary Search Tree",
+  "Binary Tree",
   "Bit Manipulation",
+  "Bitmask",
+  "Brainteaser",
+  "Breadth-First Search",
+  "Bucket Sort",
+  "Combinatorics",
+  "Concurrency",
+  "Counting",
+  "Counting Sort",
+  "Data Stream",
+  "Database",
+  "Depth-First Search",
+  "Design",
+  "Divide and Conquer",
+  "Doubly-Linked List",
+  "Dynamic Programming",
+  "Eulerian Circuit",
+  "Game Theory",
+  "Geometry",
+  "Graph",
+  "Greedy",
+  "Hash Function",
+  "Hash Table",
+  "Heap",
+  "Heap (Priority Queue)",
+  "Interactive",
+  "Iterator",
+  "Line Sweep",
+  "Linked List",
+  "Math",
+  "Matrix",
+  "Memoization",
+  "Merge Sort",
+  "Minimum Spanning Tree",
+  "Monotonic Queue",
+  "Monotonic Stack",
+  "Number Theory",
+  "Ordered Set",
+  "Prefix Sum",
+  "Probability and Statistics",
+  "Queue",
+  "Quickselect",
+  "Radix Sort",
+  "Randomized",
+  "Recursion",
+  "Rejection Sampling",
+  "Rolling Hash",
+  "Segment Tree",
+  "Shell",
+  "Shortest Path",
+  "Sliding Window",
+  "Sorting",
+  "Stack",
+  "String",
+  "String Matching",
+  "Strongly Connected Component",
+  "Suffix Array",
+  "Topological Sort",
+  "Tree",
+  "Trie",
+  "Two Pointers",
+  "Union Find"
 ];
 
 // --- Sub Components ---
@@ -165,6 +214,8 @@ const CustomSelect = ({ options, value, onChange, placeholder, className }) => {
 const TagInput = ({ tags, onChange }) => {
   const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
   const handleInputChange = (e) => {
     const value = e.target.value;
     setInputValue(value);
@@ -175,28 +226,53 @@ const TagInput = ({ tags, onChange }) => {
           !tags.includes(tag),
       );
       setSuggestions(filtered.slice(0, 5));
+      setActiveSuggestionIndex(-1);
     } else {
       setSuggestions([]);
+      setActiveSuggestionIndex(-1);
     }
   };
+
   const addTag = (tag) => {
     if (tag && !tags.includes(tag)) {
       onChange([...tags, tag]);
       setInputValue("");
       setSuggestions([]);
+      setActiveSuggestionIndex(-1);
     }
   };
+
   const removeTag = (tagToRemove) => {
     onChange(tags.filter((tag) => tag !== tagToRemove));
   };
+
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "ArrowDown") {
+      if (suggestions.length > 0) {
+        e.preventDefault();
+        setActiveSuggestionIndex((prev) => (prev + 1) % suggestions.length);
+      }
+    } else if (e.key === "ArrowUp") {
+      if (suggestions.length > 0) {
+        e.preventDefault();
+        setActiveSuggestionIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+      }
+    } else if (e.key === "Escape") {
       e.preventDefault();
-      addTag(inputValue.trim());
+      setSuggestions([]);
+      setActiveSuggestionIndex(-1);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeSuggestionIndex >= 0 && activeSuggestionIndex < suggestions.length) {
+        addTag(suggestions[activeSuggestionIndex]);
+      } else if (inputValue.trim()) {
+        addTag(inputValue.trim());
+      }
     } else if (e.key === "Backspace" && !inputValue && tags.length > 0) {
       removeTag(tags[tags.length - 1]);
     }
   };
+
   return (
     <div className="space-y-2">
       {tags.length > 0 && (
@@ -233,18 +309,23 @@ const TagInput = ({ tags, onChange }) => {
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -5 }}
-              className="absolute z-20 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl"
+              className="absolute z-20 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden"
             >
-              {suggestions.map((suggestion) => (
+              {suggestions.map((suggestion, index) => (
                 <button
                   key={suggestion}
                   type="button"
                   onClick={() => addTag(suggestion)}
-                  className="w-full px-3 py-2 text-left text-slate-200 hover:bg-slate-700/50 first:rounded-t-lg last:rounded-b-lg"
+                  onMouseEnter={() => setActiveSuggestionIndex(index)}
+                  className={`w-full px-3 py-2 text-left transition-colors text-slate-200 ${
+                    activeSuggestionIndex === index
+                      ? "bg-slate-700 text-cyan-400 font-semibold"
+                      : "hover:bg-slate-700/50"
+                  }`}
                 >
                   {suggestion}
                 </button>
-              ))}{" "}
+              ))}
             </motion.div>
           )}
         </AnimatePresence>
@@ -254,8 +335,7 @@ const TagInput = ({ tags, onChange }) => {
 };
 
 // --- Main Component ---
-export default function ProblemForm({ onAddProblem }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export default function ProblemForm({ isOpen, onClose, onAddProblem }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -278,7 +358,6 @@ export default function ProblemForm({ onAddProblem }) {
     setIsLoading(true);
 
     try {
-      // "Only Advanced Mode" means we always send the full data
       const problemData = {
         problem: formData.problem.trim(),
         difficulty: formData.difficulty || null,
@@ -297,9 +376,7 @@ export default function ProblemForm({ onAddProblem }) {
           tags: [],
           notes: "",
         });
-        // We keep the form expanded to allow adding multiple problems easily,
-        // but you can uncomment the next line to close it after success.
-        // setIsExpanded(false);
+        onClose();
       } else if (result?.error) {
         setError(result.error);
       }
@@ -316,167 +393,149 @@ export default function ProblemForm({ onAddProblem }) {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Toggle Button (Visible when form is collapsed) */}
-      {!isExpanded && (
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-          onClick={() => setIsExpanded(true)}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700/50 bg-slate-800/30 p-4 text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition-all group"
-        >
-          <div className="p-1 rounded-full bg-slate-700/50 group-hover:bg-slate-600/50 transition-colors">
-            <FiPlus />
-          </div>
-          <span className="font-medium">Add New Problem</span>
-        </motion.button>
-      )}
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+          {/* Modal Overlay backdrop click */}
+          <div className="fixed inset-0" onClick={onClose} />
 
-      {/* Collapsible Form Area */}
-      <AnimatePresence>
-        {isExpanded && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-5 shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar z-10"
           >
-            <div className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-5 shadow-xl">
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-slate-200">
-                  New Problem
-                </h3>
-                <button
-                  onClick={() => setIsExpanded(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors"
-                  title="Close form"
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-slate-200">
+                Add Problem
+              </h3>
+              <button
+                onClick={onClose}
+                className="w-7 h-7 rounded-full hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+
+            {/* Error Message */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mb-3 p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2"
                 >
-                  <FiX />
-                </button>
+                  <span>⚠️</span> {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {/* Problem Input */}
+              <div>
+                <label
+                  htmlFor="problem"
+                  className="block text-xs font-semibold text-slate-400 mb-1.5"
+                >
+                  Problem Description / URL
+                </label>
+                <input
+                  id="problem"
+                  type="text"
+                  value={formData.problem}
+                  onChange={(e) => updateFormData("problem", e.target.value)}
+                  placeholder="e.g. Reverse Linked List or https://leetcode.com/..."
+                  className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+                  required
+                  disabled={isLoading}
+                  autoFocus
+                />
               </div>
 
-              {/* Error Message */}
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2"
-                  >
-                    <span>⚠️</span> {error}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Problem Input */}
+              {/* Advanced Fields Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label
-                    htmlFor="problem"
-                    className="block text-sm font-medium text-slate-300 mb-2"
-                  >
-                    Problem Description / URL
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                    Difficulty
                   </label>
-                  <input
-                    id="problem"
-                    type="text"
-                    value={formData.problem}
-                    onChange={(e) => updateFormData("problem", e.target.value)}
-                    placeholder="e.g. Reverse Linked List or https://leetcode.com/..."
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900/50 p-3 text-slate-200 placeholder:text-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    required
-                    disabled={isLoading}
-                    autoFocus
+                  <CustomSelect
+                    options={DIFFICULTY_OPTIONS}
+                    value={formData.difficulty}
+                    onChange={(value) => updateFormData("difficulty", value)}
+                    placeholder="Select difficulty..."
                   />
                 </div>
-
-                {/* Advanced Fields Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">
-                      Difficulty
-                    </label>
-                    <CustomSelect
-                      options={DIFFICULTY_OPTIONS}
-                      value={formData.difficulty}
-                      onChange={(value) => updateFormData("difficulty", value)}
-                      placeholder="Select difficulty..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">
-                      Platform
-                    </label>
-                    <CustomSelect
-                      options={PLATFORM_OPTIONS}
-                      value={formData.platform}
-                      onChange={(value) => updateFormData("platform", value)}
-                      placeholder="Select platform..."
-                    />
-                  </div>
-                </div>
-
-                {/* Tags Input */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-2">
-                    Tags{" "}
-                    <span className="text-xs text-slate-500">
-                      ({formData.tags.length})
-                    </span>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                    Platform
                   </label>
-                  <TagInput
-                    tags={formData.tags}
-                    onChange={(tags) => updateFormData("tags", tags)}
+                  <CustomSelect
+                    options={PLATFORM_OPTIONS}
+                    value={formData.platform}
+                    onChange={(value) => updateFormData("platform", value)}
+                    placeholder="Select platform..."
                   />
                 </div>
+              </div>
 
-                {/* Notes / Approach */}
-                <div>
-                  <label
-                    htmlFor="notes"
-                    className="block text-sm font-medium text-slate-400 mb-2"
-                  >
-                    📝 Notes / Approach{" "}
-                    <span className="text-xs text-slate-500">(optional)</span>
-                  </label>
-                  <textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => updateFormData("notes", e.target.value)}
-                    placeholder="Key insight, approach used, or things to remember..."
-                    rows={3}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900/50 p-3 text-slate-200 placeholder:text-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 resize-none"
-                    disabled={isLoading}
-                  />
-                </div>
+              {/* Tags Input */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                  Tags{" "}
+                  <span className="text-[10px] text-slate-500">
+                    ({formData.tags.length})
+                  </span>
+                </label>
+                <TagInput
+                  tags={formData.tags}
+                  onChange={(tags) => updateFormData("tags", tags)}
+                />
+              </div>
 
-                {/* Action Buttons */}
-                <div className="flex justify-end items-center gap-3 pt-2 border-t border-slate-700/30">
-                  <button
-                    type="button"
-                    onClick={() => setIsExpanded(false)}
-                    className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors"
-                    disabled={isLoading}
-                  >
-                    Cancel
-                  </button>
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-cyan-500 font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-600 disabled:cursor-not-allowed disabled:bg-cyan-700/60"
-                    type="submit"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <FiLoader /> : "Add Problem"}
-                  </motion.button>
-                </div>
-              </form>
-            </div>
+              {/* Notes / Approach */}
+              <div>
+                <label
+                  htmlFor="notes"
+                  className="block text-xs font-semibold text-slate-400 mb-1.5"
+                >
+                  Notes / Approach <span className="text-[10px] text-slate-500 font-normal">(optional)</span>
+                </label>
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => updateFormData("notes", e.target.value)}
+                  placeholder="Key insight, approach used, or things to remember..."
+                  rows={2}
+                  className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/30 resize-none"
+                  disabled={isLoading}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end items-center gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-1 px-4 py-1.5 rounded-md bg-cyan-500 font-semibold text-xs text-white shadow shadow-cyan-500/20 transition-all hover:bg-cyan-600 disabled:cursor-not-allowed disabled:bg-cyan-700/60 cursor-pointer"
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  {isLoading ? <FiLoader /> : "Add Problem"}
+                </motion.button>
+              </div>
+            </form>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

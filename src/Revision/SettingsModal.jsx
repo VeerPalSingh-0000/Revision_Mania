@@ -1,7 +1,7 @@
 // src/Revision/SettingsModal.jsx
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const FiX = () => (
   <svg
@@ -56,9 +56,14 @@ const FiTrash2 = () => (
   </svg>
 );
 
-export default function SettingsModal({ intervals, onSave, onReset, onClose }) {
+export default function SettingsModal({ isOpen, intervals, onSave, onReset, onClose }) {
   const [localIntervals, setLocalIntervals] = useState([...intervals]);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Sync state if intervals change externally
+  useEffect(() => {
+    setLocalIntervals([...intervals]);
+  }, [intervals, isOpen]);
 
   const handleAdd = () => {
     setLocalIntervals([...localIntervals, { label: "New Step", days: 1 }]);
@@ -92,107 +97,111 @@ export default function SettingsModal({ intervals, onSave, onReset, onClose }) {
   };
 
   return createPortal(
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-lg overflow-hidden bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2 text-primary">
-            Revision Step Settings
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="relative w-full max-w-lg overflow-hidden bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
           >
-            <FiX />
-          </button>
-        </div>
-
-        <p className="text-sm text-slate-400 mb-6 font-medium">
-          Customize the spaced-repetition intervals. These steps define when a
-          problem will reappear in your revision schedule.
-        </p>
-
-        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-          {localIntervals.map((interval, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-3 bg-slate-800/40 p-3 rounded-lg border border-slate-700/50 group"
-            >
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={interval.label}
-                  onChange={(e) => handleChange(index, "label", e.target.value)}
-                  className="w-full bg-transparent text-sm font-semibold text-slate-200 focus:outline-none border-b border-transparent focus:border-cyan-500/50 transition-colors"
-                  placeholder="Label (e.g. 3 Days)"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={interval.days}
-                  onChange={(e) => handleChange(index, "days", e.target.value)}
-                  className="w-16 bg-slate-950 border border-slate-700 rounded-md px-2 py-1.5 text-sm text-center text-slate-200 focus:ring-1 focus:ring-cyan-500 outline-none transition-shadow"
-                  min="1"
-                />
-                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  days
-                </span>
-              </div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2 text-primary">
+                Revision Step Settings
+              </h2>
               <button
-                onClick={() => handleRemove(index)}
-                className="p-1.5 text-slate-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                title="Remove step"
+                onClick={onClose}
+                className="text-slate-400 hover:text-white transition-colors"
               >
-                <FiTrash2 />
+                <FiX />
               </button>
             </div>
-          ))}
-        </div>
 
-        <button
-          onClick={handleAdd}
-          className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-slate-700 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50 transition-all text-sm font-semibold mb-6 group hover:bg-cyan-500/5"
-        >
-          <FiPlus className="group-hover:scale-110 transition-transform" /> Add
-          Revision Step
-        </button>
+            <p className="text-sm text-slate-400 mb-6 font-medium">
+              Customize the spaced-repetition intervals. These steps define when a
+              problem will reappear in your revision schedule.
+            </p>
 
-        <div className="flex items-center gap-3 pt-4 border-t border-slate-800/50">
-          <button
-            onClick={handleReset}
-            className="text-xs font-semibold text-slate-400 hover:text-slate-100 transition-colors px-2"
-          >
-            Reset to Defaults
-          </button>
-          <div className="flex-1"></div>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-100 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-bold hover:from-cyan-500 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:shadow-none"
-          >
-            {isSaving ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>,
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              {localIntervals.map((interval, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 bg-slate-800/40 p-3 rounded-lg border border-slate-700/50 group"
+                >
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={interval.label}
+                      onChange={(e) => handleChange(index, "label", e.target.value)}
+                      className="w-full bg-transparent text-sm font-semibold text-slate-200 focus:outline-none border-b border-transparent focus:border-cyan-500/50 transition-colors"
+                      placeholder="Label (e.g. 3 Days)"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={interval.days}
+                      onChange={(e) => handleChange(index, "days", e.target.value)}
+                      className="w-16 bg-slate-950 border border-slate-700 rounded-md px-2 py-1.5 text-sm text-center text-slate-200 focus:ring-1 focus:ring-cyan-500 outline-none transition-shadow"
+                      min="1"
+                    />
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      days
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleRemove(index)}
+                    className="p-1.5 text-slate-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                    title="Remove step"
+                  >
+                    <FiTrash2 />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={handleAdd}
+              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-slate-700 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50 transition-all text-sm font-semibold mb-6 group hover:bg-cyan-500/5"
+            >
+              <FiPlus className="group-hover:scale-110 transition-transform" /> Add
+              Revision Step
+            </button>
+
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-800/50">
+              <button
+                onClick={handleReset}
+                className="text-xs font-semibold text-slate-400 hover:text-slate-100 transition-colors px-2"
+              >
+                Reset to Defaults
+              </button>
+              <div className="flex-1"></div>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-bold hover:from-cyan-500 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:shadow-none"
+              >
+                {isSaving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
     document.body,
   );
 }

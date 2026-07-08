@@ -96,3 +96,14 @@ export const logOut = async () => {
 
 // Subscribe to auth state
 export const subscribeAuth = (callback) => onAuthStateChanged(auth, callback);
+
+// Update Display Name
+export const updateDisplayName = async (newDisplayName) => {
+  if (!auth.currentUser) return { success: false, error: "Not logged in" };
+  try {
+    await updateProfile(auth.currentUser, { displayName: newDisplayName });
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: translateAuthError(error) };
+  }
+};

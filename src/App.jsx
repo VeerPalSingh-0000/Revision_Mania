@@ -9,13 +9,12 @@ import SignIn from "./components/Signin.jsx";
 import SignUp from "./components/Signup.jsx";
 import RevisionApp from "./Revision/Revision.jsx";
 import Loader from "./components/Loader.jsx";
-import Onboarding from "./components/Onboarding.jsx";
+import LandingPage from "./components/LandingPage.jsx";
 
 function AppContent() {
   const [user, setUser] = useState(null);
-  const [authMode, setAuthMode] = useState("signin");
+  const [authMode, setAuthMode] = useState("landing");
   const [isLoading, setIsLoading] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -24,16 +23,12 @@ function AppContent() {
       setIsLoading(false);
       
       if (currentUser) {
-        // Check if it's a new user for onboarding
+        // Create user document in Firestore if it doesn't exist
         const userDocRef = doc(db, 'users', currentUser.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          // This is a new user
-          await setDoc(userDocRef, { onboarded: false, createdAt: new Date() });
-          setShowOnboarding(true);
-        } else if (userDoc.data().onboarded === false) {
-          setShowOnboarding(true);
+          await setDoc(userDocRef, { createdAt: new Date() });
         }
         addToast(`Welcome back, ${currentUser.displayName || currentUser.email || 'User'}!`, 'success');
       }
@@ -41,22 +36,11 @@ function AppContent() {
     return () => unsubscribe();
   }, [addToast]);
 
-  const handleOnboardingComplete = async () => {
-    if (user) {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { onboarded: true }, { merge: true });
-    }
-    setShowOnboarding(false);
-  };
-
   if (isLoading) {
     return <Loader />;
   }
 
   if (user) {
-    if (showOnboarding) {
-      return <Onboarding onComplete={handleOnboardingComplete} />;
-    }
     return <RevisionApp user={user} />;
   }
 
@@ -67,12 +51,25 @@ function AppContent() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0 }}
+        transition={{ duration: 0.15 }}
       >
-        {authMode === "signin" ? (
-          <SignIn onSwitchToSignUp={() => setAuthMode("signup")} />
-        ) : (
-          <SignUp onSwitchToSignIn={() => setAuthMode("signin")} />
+        {authMode === "landing" && (
+          <LandingPage 
+            onSignIn={() => setAuthMode("signin")} 
+            onSignUp={() => setAuthMode("signup")} 
+          />
+        )}
+        {authMode === "signin" && (
+          <SignIn 
+            onSwitchToSignUp={() => setAuthMode("signup")} 
+            onBackToLanding={() => setAuthMode("landing")}
+          />
+        )}
+        {authMode === "signup" && (
+          <SignUp 
+            onSwitchToSignIn={() => setAuthMode("signin")} 
+            onBackToLanding={() => setAuthMode("landing")}
+          />
         )}
       </motion.div>
     </AnimatePresence>

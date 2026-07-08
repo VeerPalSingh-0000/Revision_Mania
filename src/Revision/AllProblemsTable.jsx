@@ -93,17 +93,19 @@ const AllProblemsTable = ({
   if (uniqueProblems.length === 0) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-700/50 p-16 text-center bg-slate-800/20"
+        className="flex flex-col items-center justify-center rounded-xl border border-slate-800/60 bg-slate-900/30 p-8 text-center shadow-sm relative overflow-hidden"
       >
-        <div className="text-6xl mb-4">🗂️</div>
-        <h3 className="text-xl font-bold text-slate-300 mb-2">
+        <div className="w-12 h-12 rounded-full bg-slate-800/40 border border-slate-700/50 flex items-center justify-center text-2xl mb-3 shadow-inner">
+          🗂️
+        </div>
+
+        <h3 className="text-sm font-bold text-slate-200">
           No History Yet
         </h3>
-        <p className="text-slate-500 max-w-md">
-          Your revision history will appear here once you start solving
-          problems.
+        <p className="text-[11px] text-slate-400 mt-1 max-w-sm leading-relaxed font-medium">
+          Your problem history will appear here once you add some problems.
         </p>
       </motion.div>
     );
