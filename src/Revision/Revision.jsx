@@ -800,7 +800,7 @@ export default function RevisionApp({ user }) {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative z-10 w-full max-w-4xl mx-auto"
+          className="relative z-10 w-full max-w-6xl xl:max-w-[1400px] mx-auto transition-all duration-300"
         >
           <Header
             user={user}
