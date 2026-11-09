@@ -13,7 +13,6 @@ import {
   deleteDoc,
   updateDoc,
   increment,
-  arrayUnion,
   onSnapshot,
   getDocs,
   getDoc,
@@ -173,6 +172,93 @@ export function useProblems(user) {
     }
   }, []);
 
+  const addProblemsInBulk = useCallback(
+    async (problemsList) => {
+      if (!Array.isArray(problemsList) || problemsList.length === 0 || !user) {
+        return { success: false, error: "No problems to save." };
+      }
+
+      try {
+        const batch = writeBatch(db);
+        const now = Timestamp.fromDate(new Date());
+
+        // Map existing canonical names from currently loaded problems to check duplicates
+        const existingMap = new Map();
+        problems.forEach((p) => {
+          if (p.problemCanonical) {
+            existingMap.set(p.problemCanonical.toLowerCase(), p);
+          }
+        });
+
+        let addedCount = 0;
+        let updatedCount = 0;
+
+        for (const item of problemsList) {
+          const problemText = (item.problem || item.problemName || "").trim();
+          if (!problemText) continue;
+
+          const problemCanonical = problemText.toLowerCase();
+
+          if (existingMap.has(problemCanonical)) {
+            // Update existing problem
+            const existing = existingMap.get(problemCanonical);
+            const docRef = doc(db, "problems", existing.id);
+            const solveDates = [...(existing.solveDates || [])];
+            const currentCount = existing.solveCount || 0;
+            while (solveDates.length <= currentCount) {
+              solveDates.push(null);
+            }
+            solveDates[currentCount] = now;
+
+            const updatePayload = {
+              solveCount: increment(1),
+              date: now,
+              solveDates: solveDates,
+            };
+            if (item.difficulty) updatePayload.difficulty = item.difficulty;
+            if (item.platform) updatePayload.platform = item.platform;
+            if (item.tags && item.tags.length > 0) updatePayload.tags = item.tags;
+            if (item.notes) updatePayload.notes = item.notes;
+
+            batch.update(docRef, updatePayload);
+            updatedCount++;
+          } else {
+            // Create new problem
+            const newDocRef = doc(collection(db, "problems"));
+            const newProblem = {
+              uid: user.uid,
+              problem: problemText,
+              problemCanonical: problemCanonical,
+              difficulty: item.difficulty || "medium",
+              platform: item.platform || "LeetCode",
+              tags: item.tags || [],
+              notes: item.notes || "",
+              date: now,
+              createdAt: now,
+              solveCount: 0,
+              isRevision: false,
+              originalProblemId: null,
+            };
+            batch.set(newDocRef, newProblem);
+            addedCount++;
+            // Prevent duplicates within the same batch
+            existingMap.set(problemCanonical, {
+              id: newDocRef.id,
+              ...newProblem,
+            });
+          }
+        }
+
+        await batch.commit();
+        return { success: true, added: addedCount, updated: updatedCount };
+      } catch (err) {
+        console.error("Error bulk adding problems:", err);
+        return { success: false, error: err.message || "Bulk import failed." };
+      }
+    },
+    [user, problems]
+  );
+
   const clearAllProblems = useCallback(async () => {
     if (!user) return { success: false, error: "Not authenticated" };
     try {
@@ -200,6 +286,7 @@ export function useProblems(user) {
     isLoading,
     error,
     addProblem,
+    addProblemsInBulk,
     deleteProblem,
     markAsSolved,
     updateNotes,

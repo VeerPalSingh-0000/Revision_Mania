@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { logOut, updateDisplayName } from "../components/Auth.jsx";
 import ProblemForm from "./ProblemForm.jsx";
+import AIImportModal from "./AIImport/AIImportModal.jsx";
 import RevisionList from "./RevisionList.jsx";
 import AllProblemsTable from "./AllProblemsTable.jsx";
 import { useProblems } from "../hooks/useProblems.js";
 import { useSettings } from "../hooks/useSettings.js";
+import { useToast } from "../components/Toast.jsx";
 import SettingsModal from "./SettingsModal.jsx";
 
 // --- SVG Icons for Header & Drawer ---
@@ -722,11 +724,13 @@ const ErrorMessage = ({ error, onRetry }) => (
 
 // --- Main App Component (Updated) ---
 export default function RevisionApp({ user }) {
+  const { addToast } = useToast();
   const {
     problems,
     isLoading,
     error,
     addProblem,
+    addProblemsInBulk,
     deleteProblem,
     markAsSolved,
     updateNotes,
@@ -744,6 +748,7 @@ export default function RevisionApp({ user }) {
   const [view, setView] = useState("revision");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [isAIImportOpen, setIsAIImportOpen] = useState(false);
 
   const handleClearAll = async () => {
     try {
@@ -817,15 +822,40 @@ export default function RevisionApp({ user }) {
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-6 flex-wrap gap-3">
               <ViewToggleButton view={view} setView={setView} />
               
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setIsAddFormOpen(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-600 font-bold text-xs text-white shadow-lg shadow-cyan-500/15 transition-all outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                <span>Add Problem</span>
-              </motion.button>
+              <div className="flex items-center gap-2.5">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsAIImportOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 hover:from-cyan-500/30 hover:to-purple-500/30 text-cyan-300 border border-cyan-500/40 font-bold text-xs shadow-md shadow-cyan-950/40 transition-all outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
+                  title="Import problems from screenshot or problem names using AI"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z" />
+                  </svg>
+                  <span>AI Import ✨</span>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsAddFormOpen(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-600 font-bold text-xs text-white shadow-lg shadow-cyan-500/15 transition-all outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                  <span>Add Problem</span>
+                </motion.button>
+              </div>
             </div>
 
             {/* Statistics Bar */}
@@ -921,6 +951,15 @@ export default function RevisionApp({ user }) {
         isOpen={isAddFormOpen}
         onClose={() => setIsAddFormOpen(false)}
         onAddProblem={addProblem}
+      />
+
+      {/* AI Import Modal */}
+      <AIImportModal
+        isOpen={isAIImportOpen}
+        onClose={() => setIsAIImportOpen(false)}
+        onBulkAdd={addProblemsInBulk}
+        existingProblems={problems}
+        addToast={addToast}
       />
     </>
   );

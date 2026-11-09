@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { DIFFICULTY_OPTIONS, PLATFORM_OPTIONS, COMMON_TAGS } from "./constants";
+import { autoDetectProblemDetails } from "../ai/extractProblems";
 
 // --- SVG Icons ---
 const FiPlus = () => (
@@ -72,97 +74,6 @@ const FiChevronDown = () => (
     <polyline points="6 9 12 15 18 9"></polyline>
   </svg>
 );
-
-// --- Constants ---
-const DIFFICULTY_OPTIONS = [
-  { key: "easy", value: "easy", label: "Easy" },
-  { key: "medium", value: "medium", label: "Medium" },
-  { key: "hard", value: "hard", label: "Hard" },
-];
-
-const PLATFORM_OPTIONS = [
-  "LeetCode",
-  "HackerRank",
-  "CodeForces",
-  "AtCoder",
-  "CodeChef",
-  "GeeksforGeeks",
-  "InterviewBit",
-  "Pramp",
-  "Other",
-];
-
-const COMMON_TAGS = [
-  "Array",
-  "Backtracking",
-  "Biconnected Component",
-  "Binary Indexed Tree",
-  "Binary Search",
-  "Binary Search Tree",
-  "Binary Tree",
-  "Bit Manipulation",
-  "Bitmask",
-  "Brainteaser",
-  "Breadth-First Search",
-  "Bucket Sort",
-  "Combinatorics",
-  "Concurrency",
-  "Counting",
-  "Counting Sort",
-  "Data Stream",
-  "Database",
-  "Depth-First Search",
-  "Design",
-  "Divide and Conquer",
-  "Doubly-Linked List",
-  "Dynamic Programming",
-  "Eulerian Circuit",
-  "Game Theory",
-  "Geometry",
-  "Graph",
-  "Greedy",
-  "Hash Function",
-  "Hash Table",
-  "Heap",
-  "Heap (Priority Queue)",
-  "Interactive",
-  "Iterator",
-  "Line Sweep",
-  "Linked List",
-  "Math",
-  "Matrix",
-  "Memoization",
-  "Merge Sort",
-  "Minimum Spanning Tree",
-  "Monotonic Queue",
-  "Monotonic Stack",
-  "Number Theory",
-  "Ordered Set",
-  "Prefix Sum",
-  "Probability and Statistics",
-  "Queue",
-  "Quickselect",
-  "Radix Sort",
-  "Randomized",
-  "Recursion",
-  "Rejection Sampling",
-  "Rolling Hash",
-  "Segment Tree",
-  "Shell",
-  "Shortest Path",
-  "Sliding Window",
-  "Sorting",
-  "Stack",
-  "String",
-  "String Matching",
-  "Strongly Connected Component",
-  "Suffix Array",
-  "Topological Sort",
-  "Tree",
-  "Trie",
-  "Two Pointers",
-  "Union Find"
-];
 
 // --- Sub Components ---
 const CustomSelect = ({ options, value, onChange, placeholder, className }) => {
@@ -337,6 +248,7 @@ const TagInput = ({ tags, onChange }) => {
 // --- Main Component ---
 export default function ProblemForm({ isOpen, onClose, onAddProblem }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isAutoDetecting, setIsAutoDetecting] = useState(false);
   const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
@@ -346,6 +258,36 @@ export default function ProblemForm({ isOpen, onClose, onAddProblem }) {
     tags: [],
     notes: "",
   });
+
+  const handleMagicAutoFill = async () => {
+    if (!formData.problem.trim()) {
+      setError("Please enter a problem name first to auto-fill details");
+      return;
+    }
+    setIsAutoDetecting(true);
+    setError("");
+    try {
+      const details = await autoDetectProblemDetails(
+        formData.problem,
+        formData.platform
+      );
+      setFormData((prev) => ({
+        ...prev,
+        problem: details.problem || prev.problem,
+        difficulty: details.difficulty || prev.difficulty,
+        platform: details.platform || prev.platform,
+        tags:
+          details.tags?.length > 0
+            ? Array.from(new Set([...prev.tags, ...details.tags]))
+            : prev.tags,
+        notes: details.notes || prev.notes,
+      }));
+    } catch (err) {
+      setError(err.message || "Failed to auto-detect details with AI");
+    } finally {
+      setIsAutoDetecting(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -380,7 +322,7 @@ export default function ProblemForm({ isOpen, onClose, onAddProblem }) {
       } else if (result?.error) {
         setError(result.error);
       }
-    } catch (err) {
+    } catch {
       setError("Failed to add problem. Please try again.");
     } finally {
       setIsLoading(false);
@@ -435,12 +377,49 @@ export default function ProblemForm({ isOpen, onClose, onAddProblem }) {
             <form onSubmit={handleSubmit} className="space-y-3">
               {/* Problem Input */}
               <div>
-                <label
-                  htmlFor="problem"
-                  className="block text-xs font-semibold text-slate-400 mb-1.5"
-                >
-                  Problem Description / URL
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label
+                    htmlFor="problem"
+                    className="block text-xs font-semibold text-slate-400"
+                  >
+                    Problem Description / URL
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleMagicAutoFill}
+                    disabled={isAutoDetecting || !formData.problem.trim()}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-400 hover:text-cyan-300 disabled:opacity-40 transition-colors cursor-pointer"
+                    title="Let AI automatically detect difficulty, platform, topic tags, and approach!"
+                  >
+                    {isAutoDetecting ? (
+                      <span className="flex items-center gap-1">
+                        <svg
+                          className="animate-spin h-3 w-3 text-cyan-400"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Detecting...
+                      </span>
+                    ) : (
+                      <>✨ Auto-Fill with AI</>
+                    )}
+                  </button>
+                </div>
                 <input
                   id="problem"
                   type="text"
